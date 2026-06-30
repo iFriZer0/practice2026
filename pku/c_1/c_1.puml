@@ -7,9 +7,9 @@
 UpdateElementStyle(Person, $borderColor="#000000", $fontColor="#000000", $bgColor="#ffffff")
 UpdateElementStyle(System, $borderColor="#000000", $fontColor="#000000", $bgColor="#ffffff")
 
-Person(user, "Пользователь", "Взаимодействует с платой")
+Person(user, "Пользователь", "Взаимодействует с платами")
 
-System(workplace, "Система взаимодействия с платой", "Позволяет обращаться к плате с разных драйверов")
+System(workplace, "Система взаимодействия с платами", "Позволяет обращаться к плате с разных драйверов")
 
 System(rs485_board, "Плата RS-485", "Отвечает на запросы в формате RS-485")
 System(mko_board, "Плата МКО", "Отвечает на запросы в формате МКО")
