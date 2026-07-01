@@ -45,11 +45,13 @@ target_link_libraries(pku_proto_objects PUBLIC protobuf::libprotobuf)
 
 set_target_properties(pku_proto_objects PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
+file(GLOB_RECURSE SERVICE_SOURCES CONFIGURE_DEPENDS "service/*.cpp")
+file(GLOB_RECURSE UI_SOURCES CONFIGURE_DEPENDS "ui/*.cpp")
+
 add_executable(
     service
     $<TARGET_OBJECTS:pku_proto_objects>
-    service/grpc_pku_service.cpp
-    service/main.cpp
+    ${SERVICE_SOURCES}
 )
 
 target_include_directories(
@@ -70,7 +72,7 @@ target_link_libraries(
 add_executable(
     ui
     $<TARGET_OBJECTS:pku_proto_objects>
-    ui/main.cpp
+    ${UI_SOURCES}
 )
 
 target_include_directories(
