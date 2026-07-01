@@ -1,5 +1,6 @@
 #include <iostream>
 #include <memory>
+#include <string>
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
@@ -8,13 +9,16 @@
 #include "ui_service.grpc.pb.h"
 #include "ui_service.pb.h"
 
+static const std::string IP{"localhost"};
+static const std::string PORT{":50052"};
+
 int main()
 {
-    std::shared_ptr<grpc::Channel> channel = grpc::CreateChannel("localhost:50051", grpc::InsecureChannelCredentials());
-    std::unique_ptr<UIService::Stub> stub = UIService::NewStub(channel);
+    std::shared_ptr<grpc::Channel> channel = grpc::CreateChannel(IP + PORT, grpc::InsecureChannelCredentials());
+    std::unique_ptr<grpc_ui_service::UIService::Stub> stub = grpc_ui_service::UIService::NewStub(channel);
     grpc::ClientContext context;
     google::protobuf::Empty request;
-    Version reply;
+    grpc_ui_service::Version reply;
     grpc::Status status = stub->GetVersion(&context, request, &reply);
     if (status.ok())
     {

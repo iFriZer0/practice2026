@@ -2,9 +2,9 @@ syntax = "proto3";
 
 import "google/protobuf/empty.proto";
 
-package grpc_ui_service;
+package grpc_service_driver;
 
-service UIService {
+service ServiceDriver {
     rpc GetVersion (google.protobuf.Empty) returns (Version) {}
 }
 

@@ -3,16 +3,16 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
-#include "ui_service_adapter.h"
+#include "service_driver_adapter.h"
 
 static const std::string IP{"0.0.0.0"};
-static const std::string PORT{":50052"};
+static const std::string PORT{":50051"};
 
 int main()
 {
     grpc::ServerBuilder builder;
     builder.AddListeningPort(IP + PORT, grpc::InsecureServerCredentials());
-    UIServiceAdapter service;
+    ServiceDriverAdapter service;
     builder.RegisterService(&service);
     std::unique_ptr<grpc::Server> server{builder.BuildAndStart()};
     server->Wait();
