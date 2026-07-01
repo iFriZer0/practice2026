@@ -2,7 +2,7 @@ syntax = "proto3";
 
 import "google/protobuf/empty.proto";
 
-service PkuService {
+service UIService {
     rpc GetVersion (google.protobuf.Empty) returns (Version) {}
 }
 

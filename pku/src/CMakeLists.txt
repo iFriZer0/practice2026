@@ -5,52 +5,47 @@ project(pku)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(absl_DIR "/home/alexander/gRPC/lib/cmake/absl" CACHE PATH "Abseil configuration directory")
-set(utf8_range_DIR "/home/alexander/gRPC/lib/cmake/utf8_range" CACHE PATH "utf8_range configuration directory")
-set(Protobuf_DIR "/home/alexander/gRPC/lib/cmake/protobuf" CACHE PATH "Protobuf configuration directory")
-set(gRPC_DIR "/home/alexander/gRPC/lib/cmake/grpc" CACHE PATH "gRPC configuration directory")
-
 find_package(Protobuf CONFIG REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
 
-set(GRPC_BIN_DIR "/home/alexander/gRPC/bin")
-find_program(PROTOC_EXECUTABLE protoc PATHS ${GRPC_BIN_DIR} NO_DEFAULT_PATH REQUIRED)
-find_program(GRPC_CPP_PLUGIN grpc_cpp_plugin PATHS ${GRPC_BIN_DIR} NO_DEFAULT_PATH REQUIRED)
+# В PATH должен быть путь к исполняемым файлам gRPC (.../gRPC/bin).
+set(PROTOC_EXECUTABLE protoc)
+set(GRPC_CPP_PLUGIN "`which grpc_cpp_plugin`")
 
-set(PROTO_FILE ${CMAKE_SOURCE_DIR}/api/pku_service.proto)
-set(GRPC_GEN_DIR ${CMAKE_SOURCE_DIR}/grpc_ui_service)
-file(MAKE_DIRECTORY ${GRPC_GEN_DIR})
+set(UI_SERVICE_API ${CMAKE_SOURCE_DIR}/api/ui_service.proto)
+set(GRPC_UI_SERVICE ${CMAKE_SOURCE_DIR}/grpc_ui_service)
+file(MAKE_DIRECTORY ${GRPC_UI_SERVICE})
 
 set(
-    GENERATED_FILES
-    ${GRPC_GEN_DIR}/pku_service.pb.cc
-    ${GRPC_GEN_DIR}/pku_service.pb.h
-    ${GRPC_GEN_DIR}/pku_service.grpc.pb.cc
-    ${GRPC_GEN_DIR}/pku_service.grpc.pb.h
+    UI_SERVICE_GENERATED
+    ${GRPC_UI_SERVICE}/ui_service.pb.cc
+    ${GRPC_UI_SERVICE}/ui_service.pb.h
+    ${GRPC_UI_SERVICE}/ui_service.grpc.pb.cc
+    ${GRPC_UI_SERVICE}/ui_service.grpc.pb.h
 )
 
 add_custom_command(
-    OUTPUT ${GENERATED_FILES}
-    COMMAND ${PROTOC_EXECUTABLE} -I=${CMAKE_SOURCE_DIR}/api --cpp_out=${GRPC_GEN_DIR} --grpc_out=${GRPC_GEN_DIR} --plugin=protoc-gen-grpc=${GRPC_CPP_PLUGIN} ${PROTO_FILE}
-    DEPENDS ${PROTO_FILE}
-    COMMENT "Generating gRPC code from ${PROTO_FILE}"
+    OUTPUT ${UI_SERVICE_GENERATED}
+    COMMAND bash -c "${PROTOC_EXECUTABLE} -I=\"${CMAKE_SOURCE_DIR}/api\" --cpp_out=\"${GRPC_UI_SERVICE}\" --grpc_out=\"${GRPC_UI_SERVICE}\" --plugin=protoc-gen-grpc=\"${GRPC_CPP_PLUGIN}\" \"${UI_SERVICE_API}\""
+    DEPENDS ${UI_SERVICE_API}
+    COMMENT "Generating gRPC code from ${UI_SERVICE_API}"
     VERBATIM
 )
 
-add_library(pku_proto_objects OBJECT ${GENERATED_FILES})
+add_library(ui_service_objects OBJECT ${UI_SERVICE_GENERATED})
 
-target_include_directories(pku_proto_objects PRIVATE ${GRPC_GEN_DIR})
+target_include_directories(ui_service_objects PRIVATE ${GRPC_UI_SERVICE})
 
-target_link_libraries(pku_proto_objects PUBLIC protobuf::libprotobuf)
+target_link_libraries(ui_service_objects PUBLIC protobuf::libprotobuf)
 
-set_target_properties(pku_proto_objects PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(ui_service_objects PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 file(GLOB_RECURSE SERVICE_SOURCES CONFIGURE_DEPENDS "service/*.cpp")
 file(GLOB_RECURSE UI_SOURCES CONFIGURE_DEPENDS "ui/*.cpp")
 
 add_executable(
     service
-    $<TARGET_OBJECTS:pku_proto_objects>
+    $<TARGET_OBJECTS:ui_service_objects>
     ${SERVICE_SOURCES}
 )
 
@@ -58,7 +53,7 @@ target_include_directories(
     service
     PRIVATE
     ${CMAKE_SOURCE_DIR}
-    ${GRPC_GEN_DIR}
+    ${GRPC_UI_SERVICE}
     ${Protobuf_INCLUDE_DIR}
 )
 
@@ -71,7 +66,7 @@ target_link_libraries(
 
 add_executable(
     ui
-    $<TARGET_OBJECTS:pku_proto_objects>
+    $<TARGET_OBJECTS:ui_service_objects>
     ${UI_SOURCES}
 )
 
@@ -79,7 +74,7 @@ target_include_directories(
     ui
     PRIVATE
     ${CMAKE_SOURCE_DIR}
-    ${GRPC_GEN_DIR}
+    ${GRPC_UI_SERVICE}
     ${Protobuf_INCLUDE_DIR}
 )
 

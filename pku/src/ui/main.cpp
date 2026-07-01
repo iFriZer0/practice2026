@@ -5,20 +5,13 @@
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/support/status.h>
-#include "pku_service.grpc.pb.h"
-#include "pku_service.pb.h"
-
-// TODO
-// Сделать автоматическую генерацию gRPC +.
-// Сделать автоматический поиск зависимостей.
-// Проверить, как ищутся зависимости +.
-// Сделать сборку независимой от ОС +.
-// Проверить стиль кода CMakeLists.txt.
+#include "ui_service.grpc.pb.h"
+#include "ui_service.pb.h"
 
 int main()
 {
     std::shared_ptr<grpc::Channel> channel = grpc::CreateChannel("localhost:50051", grpc::InsecureChannelCredentials());
-    std::unique_ptr<PkuService::Stub> stub = PkuService::NewStub(channel);
+    std::unique_ptr<UIService::Stub> stub = UIService::NewStub(channel);
     grpc::ClientContext context;
     google::protobuf::Empty request;
     Version reply;
