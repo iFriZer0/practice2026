@@ -10,10 +10,10 @@ import (
 type MKOServer struct {
 	mkoapiv1.UnimplementedMkoWorkstationServiceServer
 
-	ouServer OuServerInterface
+	ouServer OuServiceInterface
 }
 
-func NewMKOServer(ouServer OuServerInterface) *MKOServer {
+func NewMKOServer(ouServer OuServiceInterface) *MKOServer {
 	return &MKOServer{
 		ouServer: ouServer,
 	}
