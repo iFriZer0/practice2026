@@ -4,28 +4,31 @@ package mko.workstation.v1;
 
 option go_package = "mko/api/gen;mkoapiv1";
 
+// Ошибки НЕ передаются полями в сообщениях. Источник ошибки
+// (невалидные данные / отказ драйвера / таймаут / нет связи / не
+// реализовано) кодируется через стандартный gRPC status.Code:
+//   InvalidArgument     — не прошла ваша валидация
+//   FailedPrecondition  — драйвер/плата отклонили операцию
+//   DeadlineExceeded    — не дождались ответа
+//   Unavailable         — нет связи с mko_driver
+//   Unimplemented       — функциональность драйвером пока не поддержана (TCR!/TCT!)
+// Клиент читает код через status.FromError(err).
 
 service MkoWorkstationService {
   rpc GetStatus(Empty) returns (StatusResponse);
-
-  rpc ConfigureOu(ConfigureOuRequest) returns (StandardResponse);
-  rpc SetOuResponseWord(SetOuResponseWordRequest) returns (StandardResponse);
+  rpc ConfigureOu(ConfigureOuRequest) returns (Empty);
+  rpc SetOuResponseWord(SetOuResponseWordRequest) returns (Empty);
   rpc ReadOuSubaddress(ReadOuSubaddressRequest) returns (OuSubaddressData);
-  rpc WriteOuSubaddress(WriteOuSubaddressRequest) returns (StandardResponse);
-  rpc SendRawOuData(WriteOuSubaddressRequest) returns (StandardResponse);
+  rpc WriteOuSubaddress(WriteOuSubaddressRequest) returns (Empty);
+  rpc SendRawOuData(WriteOuSubaddressRequest) returns (Empty);
   rpc SubscribeOuCommands(SubscribeOuCommandsRequest) returns (stream OuCommandEvent);
-  rpc ClearReceiveBuffer(ClearBufferRequest) returns (StandardResponse);
-  rpc ClearTransmitBuffer(ClearBufferRequest) returns (StandardResponse);
+  rpc ClearReceiveBuffer(ClearBufferRequest) returns (Empty);
+  rpc ClearTransmitBuffer(ClearBufferRequest) returns (Empty);
 
   // часть для KK
 }
 
 message Empty {
-}
-
-message StandardResponse {
-  bool success = 1;
-  string error_message = 2;
 }
 
 message StatusResponse {
@@ -59,13 +62,11 @@ message ReadOuSubaddressRequest {
 }
 
 message OuSubaddressData {
-  bool success = 1;
-  string error_message = 2;
-  uint32 subaddress = 3;
-  repeated uint32 sd = 4;
-  uint32 cmd_word = 5;
-  uint32 result_word = 6;
-  string decoded_result = 7;
+  uint32 subaddress = 1;
+  repeated uint32 sd = 2;
+  uint32 cmd_word = 3;
+  uint32 result_word = 4;
+  string decoded_result = 5;
 }
 
 message WriteOuSubaddressRequest {
