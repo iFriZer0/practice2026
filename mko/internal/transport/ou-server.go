@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-type OuServerInterface interface {
+type OuServiceInterface interface {
 }
 
 func (M MKOServer) GetStatus(ctx context.Context, empty *mkoapiv1.Empty) (*mkoapiv1.StatusResponse, error) {
