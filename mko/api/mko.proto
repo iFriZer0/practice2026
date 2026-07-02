@@ -1,0 +1,95 @@
+syntax = "proto3";
+
+package mko.workstation.v1;
+
+option go_package = "mko/api/gen;mkoapiv1";
+
+
+service MkoWorkstationService {
+  rpc GetStatus(Empty) returns (StatusResponse);
+
+  rpc ConfigureOu(ConfigureOuRequest) returns (StandardResponse);
+  rpc SetOuResponseWord(SetOuResponseWordRequest) returns (StandardResponse);
+  rpc ReadOuSubaddress(ReadOuSubaddressRequest) returns (OuSubaddressData);
+  rpc WriteOuSubaddress(WriteOuSubaddressRequest) returns (StandardResponse);
+  rpc SendRawOuData(WriteOuSubaddressRequest) returns (StandardResponse);
+  rpc SubscribeOuCommands(SubscribeOuCommandsRequest) returns (stream OuCommandEvent);
+  rpc ClearReceiveBuffer(ClearBufferRequest) returns (StandardResponse);
+  rpc ClearTransmitBuffer(ClearBufferRequest) returns (StandardResponse);
+
+  // часть для KK
+}
+
+message Empty {
+}
+
+message StandardResponse {
+  bool success = 1;
+  string error_message = 2;
+}
+
+message StatusResponse {
+  string service_version = 1;
+  bool driver_connected = 2;
+  string driver_version = 3;
+}
+
+message ConfigureOuRequest {
+  string board_id = 1;
+  int32 index = 2;
+  int32 channel = 3;
+  int32 ou_address = 4;
+  int32 response_word = 5;
+  string remote_ip = 6;
+  int32 remote_port = 7;
+}
+
+message SetOuResponseWordRequest {
+  string board_id = 1;
+  int32 index = 2;
+  int32 channel = 3;
+  int32 ou_address = 4;
+  int32 response_word = 5;
+}
+
+message ReadOuSubaddressRequest {
+  string board_id = 1;
+  uint32 subaddress = 2;
+  bool receive_area = 3;
+}
+
+message OuSubaddressData {
+  bool success = 1;
+  string error_message = 2;
+  uint32 subaddress = 3;
+  repeated uint32 sd = 4;
+  uint32 cmd_word = 5;
+  uint32 result_word = 6;
+  string decoded_result = 7;
+}
+
+message WriteOuSubaddressRequest {
+  string board_id = 1;
+  uint32 subaddress = 2;
+  repeated uint32 sd = 3;
+}
+
+message SubscribeOuCommandsRequest {
+  string board_id = 1;
+}
+
+message OuCommandEvent {
+  uint32 cmd_word = 1;
+  uint32 result_word = 2;
+  bool receive_from_ou = 3;
+  uint32 ou_address = 4;
+  uint32 subaddress = 5;
+  uint32 word_count = 6;
+  string decoded_command = 7;
+  string decoded_result = 8;
+}
+
+message ClearBufferRequest {
+  string board_id = 1;
+  int32 index = 2;
+}

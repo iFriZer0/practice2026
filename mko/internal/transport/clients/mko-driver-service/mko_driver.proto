@@ -1,8 +1,10 @@
 // Восстановленая версия их скомпилированных исходников, которые прислали
-
 syntax = "proto3";
 
 package mko.driver.v1;
+
+option go_package = "mko/internal/transport/clients/mko-driver-service/gen/mkodriverv1;mkodriverv1";
+
 
 import "google/protobuf/empty.proto";
 
