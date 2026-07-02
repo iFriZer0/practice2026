@@ -35,14 +35,14 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MkoWorkstationServiceClient interface {
 	GetStatus(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*StatusResponse, error)
-	ConfigureOu(ctx context.Context, in *ConfigureOuRequest, opts ...grpc.CallOption) (*StandardResponse, error)
-	SetOuResponseWord(ctx context.Context, in *SetOuResponseWordRequest, opts ...grpc.CallOption) (*StandardResponse, error)
+	ConfigureOu(ctx context.Context, in *ConfigureOuRequest, opts ...grpc.CallOption) (*Empty, error)
+	SetOuResponseWord(ctx context.Context, in *SetOuResponseWordRequest, opts ...grpc.CallOption) (*Empty, error)
 	ReadOuSubaddress(ctx context.Context, in *ReadOuSubaddressRequest, opts ...grpc.CallOption) (*OuSubaddressData, error)
-	WriteOuSubaddress(ctx context.Context, in *WriteOuSubaddressRequest, opts ...grpc.CallOption) (*StandardResponse, error)
-	SendRawOuData(ctx context.Context, in *WriteOuSubaddressRequest, opts ...grpc.CallOption) (*StandardResponse, error)
+	WriteOuSubaddress(ctx context.Context, in *WriteOuSubaddressRequest, opts ...grpc.CallOption) (*Empty, error)
+	SendRawOuData(ctx context.Context, in *WriteOuSubaddressRequest, opts ...grpc.CallOption) (*Empty, error)
 	SubscribeOuCommands(ctx context.Context, in *SubscribeOuCommandsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[OuCommandEvent], error)
-	ClearReceiveBuffer(ctx context.Context, in *ClearBufferRequest, opts ...grpc.CallOption) (*StandardResponse, error)
-	ClearTransmitBuffer(ctx context.Context, in *ClearBufferRequest, opts ...grpc.CallOption) (*StandardResponse, error)
+	ClearReceiveBuffer(ctx context.Context, in *ClearBufferRequest, opts ...grpc.CallOption) (*Empty, error)
+	ClearTransmitBuffer(ctx context.Context, in *ClearBufferRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type mkoWorkstationServiceClient struct {
@@ -63,9 +63,9 @@ func (c *mkoWorkstationServiceClient) GetStatus(ctx context.Context, in *Empty, 
 	return out, nil
 }
 
-func (c *mkoWorkstationServiceClient) ConfigureOu(ctx context.Context, in *ConfigureOuRequest, opts ...grpc.CallOption) (*StandardResponse, error) {
+func (c *mkoWorkstationServiceClient) ConfigureOu(ctx context.Context, in *ConfigureOuRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(StandardResponse)
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, MkoWorkstationService_ConfigureOu_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -73,9 +73,9 @@ func (c *mkoWorkstationServiceClient) ConfigureOu(ctx context.Context, in *Confi
 	return out, nil
 }
 
-func (c *mkoWorkstationServiceClient) SetOuResponseWord(ctx context.Context, in *SetOuResponseWordRequest, opts ...grpc.CallOption) (*StandardResponse, error) {
+func (c *mkoWorkstationServiceClient) SetOuResponseWord(ctx context.Context, in *SetOuResponseWordRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(StandardResponse)
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, MkoWorkstationService_SetOuResponseWord_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -93,9 +93,9 @@ func (c *mkoWorkstationServiceClient) ReadOuSubaddress(ctx context.Context, in *
 	return out, nil
 }
 
-func (c *mkoWorkstationServiceClient) WriteOuSubaddress(ctx context.Context, in *WriteOuSubaddressRequest, opts ...grpc.CallOption) (*StandardResponse, error) {
+func (c *mkoWorkstationServiceClient) WriteOuSubaddress(ctx context.Context, in *WriteOuSubaddressRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(StandardResponse)
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, MkoWorkstationService_WriteOuSubaddress_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -103,9 +103,9 @@ func (c *mkoWorkstationServiceClient) WriteOuSubaddress(ctx context.Context, in 
 	return out, nil
 }
 
-func (c *mkoWorkstationServiceClient) SendRawOuData(ctx context.Context, in *WriteOuSubaddressRequest, opts ...grpc.CallOption) (*StandardResponse, error) {
+func (c *mkoWorkstationServiceClient) SendRawOuData(ctx context.Context, in *WriteOuSubaddressRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(StandardResponse)
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, MkoWorkstationService_SendRawOuData_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -132,9 +132,9 @@ func (c *mkoWorkstationServiceClient) SubscribeOuCommands(ctx context.Context, i
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type MkoWorkstationService_SubscribeOuCommandsClient = grpc.ServerStreamingClient[OuCommandEvent]
 
-func (c *mkoWorkstationServiceClient) ClearReceiveBuffer(ctx context.Context, in *ClearBufferRequest, opts ...grpc.CallOption) (*StandardResponse, error) {
+func (c *mkoWorkstationServiceClient) ClearReceiveBuffer(ctx context.Context, in *ClearBufferRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(StandardResponse)
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, MkoWorkstationService_ClearReceiveBuffer_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -142,9 +142,9 @@ func (c *mkoWorkstationServiceClient) ClearReceiveBuffer(ctx context.Context, in
 	return out, nil
 }
 
-func (c *mkoWorkstationServiceClient) ClearTransmitBuffer(ctx context.Context, in *ClearBufferRequest, opts ...grpc.CallOption) (*StandardResponse, error) {
+func (c *mkoWorkstationServiceClient) ClearTransmitBuffer(ctx context.Context, in *ClearBufferRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(StandardResponse)
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, MkoWorkstationService_ClearTransmitBuffer_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -157,14 +157,14 @@ func (c *mkoWorkstationServiceClient) ClearTransmitBuffer(ctx context.Context, i
 // for forward compatibility.
 type MkoWorkstationServiceServer interface {
 	GetStatus(context.Context, *Empty) (*StatusResponse, error)
-	ConfigureOu(context.Context, *ConfigureOuRequest) (*StandardResponse, error)
-	SetOuResponseWord(context.Context, *SetOuResponseWordRequest) (*StandardResponse, error)
+	ConfigureOu(context.Context, *ConfigureOuRequest) (*Empty, error)
+	SetOuResponseWord(context.Context, *SetOuResponseWordRequest) (*Empty, error)
 	ReadOuSubaddress(context.Context, *ReadOuSubaddressRequest) (*OuSubaddressData, error)
-	WriteOuSubaddress(context.Context, *WriteOuSubaddressRequest) (*StandardResponse, error)
-	SendRawOuData(context.Context, *WriteOuSubaddressRequest) (*StandardResponse, error)
+	WriteOuSubaddress(context.Context, *WriteOuSubaddressRequest) (*Empty, error)
+	SendRawOuData(context.Context, *WriteOuSubaddressRequest) (*Empty, error)
 	SubscribeOuCommands(*SubscribeOuCommandsRequest, grpc.ServerStreamingServer[OuCommandEvent]) error
-	ClearReceiveBuffer(context.Context, *ClearBufferRequest) (*StandardResponse, error)
-	ClearTransmitBuffer(context.Context, *ClearBufferRequest) (*StandardResponse, error)
+	ClearReceiveBuffer(context.Context, *ClearBufferRequest) (*Empty, error)
+	ClearTransmitBuffer(context.Context, *ClearBufferRequest) (*Empty, error)
 	mustEmbedUnimplementedMkoWorkstationServiceServer()
 }
 
@@ -178,28 +178,28 @@ type UnimplementedMkoWorkstationServiceServer struct{}
 func (UnimplementedMkoWorkstationServiceServer) GetStatus(context.Context, *Empty) (*StatusResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetStatus not implemented")
 }
-func (UnimplementedMkoWorkstationServiceServer) ConfigureOu(context.Context, *ConfigureOuRequest) (*StandardResponse, error) {
+func (UnimplementedMkoWorkstationServiceServer) ConfigureOu(context.Context, *ConfigureOuRequest) (*Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method ConfigureOu not implemented")
 }
-func (UnimplementedMkoWorkstationServiceServer) SetOuResponseWord(context.Context, *SetOuResponseWordRequest) (*StandardResponse, error) {
+func (UnimplementedMkoWorkstationServiceServer) SetOuResponseWord(context.Context, *SetOuResponseWordRequest) (*Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method SetOuResponseWord not implemented")
 }
 func (UnimplementedMkoWorkstationServiceServer) ReadOuSubaddress(context.Context, *ReadOuSubaddressRequest) (*OuSubaddressData, error) {
 	return nil, status.Error(codes.Unimplemented, "method ReadOuSubaddress not implemented")
 }
-func (UnimplementedMkoWorkstationServiceServer) WriteOuSubaddress(context.Context, *WriteOuSubaddressRequest) (*StandardResponse, error) {
+func (UnimplementedMkoWorkstationServiceServer) WriteOuSubaddress(context.Context, *WriteOuSubaddressRequest) (*Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method WriteOuSubaddress not implemented")
 }
-func (UnimplementedMkoWorkstationServiceServer) SendRawOuData(context.Context, *WriteOuSubaddressRequest) (*StandardResponse, error) {
+func (UnimplementedMkoWorkstationServiceServer) SendRawOuData(context.Context, *WriteOuSubaddressRequest) (*Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method SendRawOuData not implemented")
 }
 func (UnimplementedMkoWorkstationServiceServer) SubscribeOuCommands(*SubscribeOuCommandsRequest, grpc.ServerStreamingServer[OuCommandEvent]) error {
 	return status.Error(codes.Unimplemented, "method SubscribeOuCommands not implemented")
 }
-func (UnimplementedMkoWorkstationServiceServer) ClearReceiveBuffer(context.Context, *ClearBufferRequest) (*StandardResponse, error) {
+func (UnimplementedMkoWorkstationServiceServer) ClearReceiveBuffer(context.Context, *ClearBufferRequest) (*Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method ClearReceiveBuffer not implemented")
 }
-func (UnimplementedMkoWorkstationServiceServer) ClearTransmitBuffer(context.Context, *ClearBufferRequest) (*StandardResponse, error) {
+func (UnimplementedMkoWorkstationServiceServer) ClearTransmitBuffer(context.Context, *ClearBufferRequest) (*Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method ClearTransmitBuffer not implemented")
 }
 func (UnimplementedMkoWorkstationServiceServer) mustEmbedUnimplementedMkoWorkstationServiceServer() {}

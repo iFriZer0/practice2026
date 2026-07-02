@@ -57,58 +57,6 @@ func (*Empty) Descriptor() ([]byte, []int) {
 	return file_mko_proto_rawDescGZIP(), []int{0}
 }
 
-type StandardResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	ErrorMessage  string                 `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *StandardResponse) Reset() {
-	*x = StandardResponse{}
-	mi := &file_mko_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *StandardResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*StandardResponse) ProtoMessage() {}
-
-func (x *StandardResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_mko_proto_msgTypes[1]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use StandardResponse.ProtoReflect.Descriptor instead.
-func (*StandardResponse) Descriptor() ([]byte, []int) {
-	return file_mko_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *StandardResponse) GetSuccess() bool {
-	if x != nil {
-		return x.Success
-	}
-	return false
-}
-
-func (x *StandardResponse) GetErrorMessage() string {
-	if x != nil {
-		return x.ErrorMessage
-	}
-	return ""
-}
-
 type StatusResponse struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	ServiceVersion  string                 `protobuf:"bytes,1,opt,name=service_version,json=serviceVersion,proto3" json:"service_version,omitempty"`
@@ -120,7 +68,7 @@ type StatusResponse struct {
 
 func (x *StatusResponse) Reset() {
 	*x = StatusResponse{}
-	mi := &file_mko_proto_msgTypes[2]
+	mi := &file_mko_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -132,7 +80,7 @@ func (x *StatusResponse) String() string {
 func (*StatusResponse) ProtoMessage() {}
 
 func (x *StatusResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_mko_proto_msgTypes[2]
+	mi := &file_mko_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -145,7 +93,7 @@ func (x *StatusResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StatusResponse.ProtoReflect.Descriptor instead.
 func (*StatusResponse) Descriptor() ([]byte, []int) {
-	return file_mko_proto_rawDescGZIP(), []int{2}
+	return file_mko_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *StatusResponse) GetServiceVersion() string {
@@ -184,7 +132,7 @@ type ConfigureOuRequest struct {
 
 func (x *ConfigureOuRequest) Reset() {
 	*x = ConfigureOuRequest{}
-	mi := &file_mko_proto_msgTypes[3]
+	mi := &file_mko_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -196,7 +144,7 @@ func (x *ConfigureOuRequest) String() string {
 func (*ConfigureOuRequest) ProtoMessage() {}
 
 func (x *ConfigureOuRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mko_proto_msgTypes[3]
+	mi := &file_mko_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -209,7 +157,7 @@ func (x *ConfigureOuRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfigureOuRequest.ProtoReflect.Descriptor instead.
 func (*ConfigureOuRequest) Descriptor() ([]byte, []int) {
-	return file_mko_proto_rawDescGZIP(), []int{3}
+	return file_mko_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ConfigureOuRequest) GetBoardId() string {
@@ -274,7 +222,7 @@ type SetOuResponseWordRequest struct {
 
 func (x *SetOuResponseWordRequest) Reset() {
 	*x = SetOuResponseWordRequest{}
-	mi := &file_mko_proto_msgTypes[4]
+	mi := &file_mko_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -286,7 +234,7 @@ func (x *SetOuResponseWordRequest) String() string {
 func (*SetOuResponseWordRequest) ProtoMessage() {}
 
 func (x *SetOuResponseWordRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mko_proto_msgTypes[4]
+	mi := &file_mko_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -299,7 +247,7 @@ func (x *SetOuResponseWordRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetOuResponseWordRequest.ProtoReflect.Descriptor instead.
 func (*SetOuResponseWordRequest) Descriptor() ([]byte, []int) {
-	return file_mko_proto_rawDescGZIP(), []int{4}
+	return file_mko_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *SetOuResponseWordRequest) GetBoardId() string {
@@ -348,7 +296,7 @@ type ReadOuSubaddressRequest struct {
 
 func (x *ReadOuSubaddressRequest) Reset() {
 	*x = ReadOuSubaddressRequest{}
-	mi := &file_mko_proto_msgTypes[5]
+	mi := &file_mko_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -360,7 +308,7 @@ func (x *ReadOuSubaddressRequest) String() string {
 func (*ReadOuSubaddressRequest) ProtoMessage() {}
 
 func (x *ReadOuSubaddressRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mko_proto_msgTypes[5]
+	mi := &file_mko_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -373,7 +321,7 @@ func (x *ReadOuSubaddressRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadOuSubaddressRequest.ProtoReflect.Descriptor instead.
 func (*ReadOuSubaddressRequest) Descriptor() ([]byte, []int) {
-	return file_mko_proto_rawDescGZIP(), []int{5}
+	return file_mko_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ReadOuSubaddressRequest) GetBoardId() string {
@@ -399,20 +347,18 @@ func (x *ReadOuSubaddressRequest) GetReceiveArea() bool {
 
 type OuSubaddressData struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	ErrorMessage  string                 `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	Subaddress    uint32                 `protobuf:"varint,3,opt,name=subaddress,proto3" json:"subaddress,omitempty"`
-	Sd            []uint32               `protobuf:"varint,4,rep,packed,name=sd,proto3" json:"sd,omitempty"`
-	CmdWord       uint32                 `protobuf:"varint,5,opt,name=cmd_word,json=cmdWord,proto3" json:"cmd_word,omitempty"`
-	ResultWord    uint32                 `protobuf:"varint,6,opt,name=result_word,json=resultWord,proto3" json:"result_word,omitempty"`
-	DecodedResult string                 `protobuf:"bytes,7,opt,name=decoded_result,json=decodedResult,proto3" json:"decoded_result,omitempty"`
+	Subaddress    uint32                 `protobuf:"varint,1,opt,name=subaddress,proto3" json:"subaddress,omitempty"`
+	Sd            []uint32               `protobuf:"varint,2,rep,packed,name=sd,proto3" json:"sd,omitempty"`
+	CmdWord       uint32                 `protobuf:"varint,3,opt,name=cmd_word,json=cmdWord,proto3" json:"cmd_word,omitempty"`
+	ResultWord    uint32                 `protobuf:"varint,4,opt,name=result_word,json=resultWord,proto3" json:"result_word,omitempty"`
+	DecodedResult string                 `protobuf:"bytes,5,opt,name=decoded_result,json=decodedResult,proto3" json:"decoded_result,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *OuSubaddressData) Reset() {
 	*x = OuSubaddressData{}
-	mi := &file_mko_proto_msgTypes[6]
+	mi := &file_mko_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -424,7 +370,7 @@ func (x *OuSubaddressData) String() string {
 func (*OuSubaddressData) ProtoMessage() {}
 
 func (x *OuSubaddressData) ProtoReflect() protoreflect.Message {
-	mi := &file_mko_proto_msgTypes[6]
+	mi := &file_mko_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -437,21 +383,7 @@ func (x *OuSubaddressData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OuSubaddressData.ProtoReflect.Descriptor instead.
 func (*OuSubaddressData) Descriptor() ([]byte, []int) {
-	return file_mko_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *OuSubaddressData) GetSuccess() bool {
-	if x != nil {
-		return x.Success
-	}
-	return false
-}
-
-func (x *OuSubaddressData) GetErrorMessage() string {
-	if x != nil {
-		return x.ErrorMessage
-	}
-	return ""
+	return file_mko_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *OuSubaddressData) GetSubaddress() uint32 {
@@ -500,7 +432,7 @@ type WriteOuSubaddressRequest struct {
 
 func (x *WriteOuSubaddressRequest) Reset() {
 	*x = WriteOuSubaddressRequest{}
-	mi := &file_mko_proto_msgTypes[7]
+	mi := &file_mko_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -512,7 +444,7 @@ func (x *WriteOuSubaddressRequest) String() string {
 func (*WriteOuSubaddressRequest) ProtoMessage() {}
 
 func (x *WriteOuSubaddressRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mko_proto_msgTypes[7]
+	mi := &file_mko_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -525,7 +457,7 @@ func (x *WriteOuSubaddressRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteOuSubaddressRequest.ProtoReflect.Descriptor instead.
 func (*WriteOuSubaddressRequest) Descriptor() ([]byte, []int) {
-	return file_mko_proto_rawDescGZIP(), []int{7}
+	return file_mko_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *WriteOuSubaddressRequest) GetBoardId() string {
@@ -558,7 +490,7 @@ type SubscribeOuCommandsRequest struct {
 
 func (x *SubscribeOuCommandsRequest) Reset() {
 	*x = SubscribeOuCommandsRequest{}
-	mi := &file_mko_proto_msgTypes[8]
+	mi := &file_mko_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -570,7 +502,7 @@ func (x *SubscribeOuCommandsRequest) String() string {
 func (*SubscribeOuCommandsRequest) ProtoMessage() {}
 
 func (x *SubscribeOuCommandsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mko_proto_msgTypes[8]
+	mi := &file_mko_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -583,7 +515,7 @@ func (x *SubscribeOuCommandsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubscribeOuCommandsRequest.ProtoReflect.Descriptor instead.
 func (*SubscribeOuCommandsRequest) Descriptor() ([]byte, []int) {
-	return file_mko_proto_rawDescGZIP(), []int{8}
+	return file_mko_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *SubscribeOuCommandsRequest) GetBoardId() string {
@@ -609,7 +541,7 @@ type OuCommandEvent struct {
 
 func (x *OuCommandEvent) Reset() {
 	*x = OuCommandEvent{}
-	mi := &file_mko_proto_msgTypes[9]
+	mi := &file_mko_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -621,7 +553,7 @@ func (x *OuCommandEvent) String() string {
 func (*OuCommandEvent) ProtoMessage() {}
 
 func (x *OuCommandEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_mko_proto_msgTypes[9]
+	mi := &file_mko_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -634,7 +566,7 @@ func (x *OuCommandEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OuCommandEvent.ProtoReflect.Descriptor instead.
 func (*OuCommandEvent) Descriptor() ([]byte, []int) {
-	return file_mko_proto_rawDescGZIP(), []int{9}
+	return file_mko_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *OuCommandEvent) GetCmdWord() uint32 {
@@ -703,7 +635,7 @@ type ClearBufferRequest struct {
 
 func (x *ClearBufferRequest) Reset() {
 	*x = ClearBufferRequest{}
-	mi := &file_mko_proto_msgTypes[10]
+	mi := &file_mko_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -715,7 +647,7 @@ func (x *ClearBufferRequest) String() string {
 func (*ClearBufferRequest) ProtoMessage() {}
 
 func (x *ClearBufferRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mko_proto_msgTypes[10]
+	mi := &file_mko_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -728,7 +660,7 @@ func (x *ClearBufferRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClearBufferRequest.ProtoReflect.Descriptor instead.
 func (*ClearBufferRequest) Descriptor() ([]byte, []int) {
-	return file_mko_proto_rawDescGZIP(), []int{10}
+	return file_mko_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ClearBufferRequest) GetBoardId() string {
@@ -750,10 +682,7 @@ var File_mko_proto protoreflect.FileDescriptor
 const file_mko_proto_rawDesc = "" +
 	"\n" +
 	"\tmko.proto\x12\x12mko.workstation.v1\"\a\n" +
-	"\x05Empty\"Q\n" +
-	"\x10StandardResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\x12#\n" +
-	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage\"\x8b\x01\n" +
+	"\x05Empty\"\x8b\x01\n" +
 	"\x0eStatusResponse\x12'\n" +
 	"\x0fservice_version\x18\x01 \x01(\tR\x0eserviceVersion\x12)\n" +
 	"\x10driver_connected\x18\x02 \x01(\bR\x0fdriverConnected\x12%\n" +
@@ -780,18 +709,16 @@ const file_mko_proto_rawDesc = "" +
 	"\n" +
 	"subaddress\x18\x02 \x01(\rR\n" +
 	"subaddress\x12!\n" +
-	"\freceive_area\x18\x03 \x01(\bR\vreceiveArea\"\xe4\x01\n" +
-	"\x10OuSubaddressData\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\x12#\n" +
-	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage\x12\x1e\n" +
+	"\freceive_area\x18\x03 \x01(\bR\vreceiveArea\"\xa5\x01\n" +
+	"\x10OuSubaddressData\x12\x1e\n" +
 	"\n" +
-	"subaddress\x18\x03 \x01(\rR\n" +
+	"subaddress\x18\x01 \x01(\rR\n" +
 	"subaddress\x12\x0e\n" +
-	"\x02sd\x18\x04 \x03(\rR\x02sd\x12\x19\n" +
-	"\bcmd_word\x18\x05 \x01(\rR\acmdWord\x12\x1f\n" +
-	"\vresult_word\x18\x06 \x01(\rR\n" +
+	"\x02sd\x18\x02 \x03(\rR\x02sd\x12\x19\n" +
+	"\bcmd_word\x18\x03 \x01(\rR\acmdWord\x12\x1f\n" +
+	"\vresult_word\x18\x04 \x01(\rR\n" +
 	"resultWord\x12%\n" +
-	"\x0edecoded_result\x18\a \x01(\tR\rdecodedResult\"e\n" +
+	"\x0edecoded_result\x18\x05 \x01(\tR\rdecodedResult\"e\n" +
 	"\x18WriteOuSubaddressRequest\x12\x19\n" +
 	"\bboard_id\x18\x01 \x01(\tR\aboardId\x12\x1e\n" +
 	"\n" +
@@ -816,17 +743,17 @@ const file_mko_proto_rawDesc = "" +
 	"\x0edecoded_result\x18\b \x01(\tR\rdecodedResult\"E\n" +
 	"\x12ClearBufferRequest\x12\x19\n" +
 	"\bboard_id\x18\x01 \x01(\tR\aboardId\x12\x14\n" +
-	"\x05index\x18\x02 \x01(\x05R\x05index2\x94\a\n" +
+	"\x05index\x18\x02 \x01(\x05R\x05index2\xd2\x06\n" +
 	"\x15MkoWorkstationService\x12J\n" +
-	"\tGetStatus\x12\x19.mko.workstation.v1.Empty\x1a\".mko.workstation.v1.StatusResponse\x12[\n" +
-	"\vConfigureOu\x12&.mko.workstation.v1.ConfigureOuRequest\x1a$.mko.workstation.v1.StandardResponse\x12g\n" +
-	"\x11SetOuResponseWord\x12,.mko.workstation.v1.SetOuResponseWordRequest\x1a$.mko.workstation.v1.StandardResponse\x12e\n" +
-	"\x10ReadOuSubaddress\x12+.mko.workstation.v1.ReadOuSubaddressRequest\x1a$.mko.workstation.v1.OuSubaddressData\x12g\n" +
-	"\x11WriteOuSubaddress\x12,.mko.workstation.v1.WriteOuSubaddressRequest\x1a$.mko.workstation.v1.StandardResponse\x12c\n" +
-	"\rSendRawOuData\x12,.mko.workstation.v1.WriteOuSubaddressRequest\x1a$.mko.workstation.v1.StandardResponse\x12k\n" +
-	"\x13SubscribeOuCommands\x12..mko.workstation.v1.SubscribeOuCommandsRequest\x1a\".mko.workstation.v1.OuCommandEvent0\x01\x12b\n" +
-	"\x12ClearReceiveBuffer\x12&.mko.workstation.v1.ClearBufferRequest\x1a$.mko.workstation.v1.StandardResponse\x12c\n" +
-	"\x13ClearTransmitBuffer\x12&.mko.workstation.v1.ClearBufferRequest\x1a$.mko.workstation.v1.StandardResponseB\x16Z\x14mko/api/gen;mkoapiv1b\x06proto3"
+	"\tGetStatus\x12\x19.mko.workstation.v1.Empty\x1a\".mko.workstation.v1.StatusResponse\x12P\n" +
+	"\vConfigureOu\x12&.mko.workstation.v1.ConfigureOuRequest\x1a\x19.mko.workstation.v1.Empty\x12\\\n" +
+	"\x11SetOuResponseWord\x12,.mko.workstation.v1.SetOuResponseWordRequest\x1a\x19.mko.workstation.v1.Empty\x12e\n" +
+	"\x10ReadOuSubaddress\x12+.mko.workstation.v1.ReadOuSubaddressRequest\x1a$.mko.workstation.v1.OuSubaddressData\x12\\\n" +
+	"\x11WriteOuSubaddress\x12,.mko.workstation.v1.WriteOuSubaddressRequest\x1a\x19.mko.workstation.v1.Empty\x12X\n" +
+	"\rSendRawOuData\x12,.mko.workstation.v1.WriteOuSubaddressRequest\x1a\x19.mko.workstation.v1.Empty\x12k\n" +
+	"\x13SubscribeOuCommands\x12..mko.workstation.v1.SubscribeOuCommandsRequest\x1a\".mko.workstation.v1.OuCommandEvent0\x01\x12W\n" +
+	"\x12ClearReceiveBuffer\x12&.mko.workstation.v1.ClearBufferRequest\x1a\x19.mko.workstation.v1.Empty\x12X\n" +
+	"\x13ClearTransmitBuffer\x12&.mko.workstation.v1.ClearBufferRequest\x1a\x19.mko.workstation.v1.EmptyB\x16Z\x14mko/api/gen;mkoapiv1b\x06proto3"
 
 var (
 	file_mko_proto_rawDescOnce sync.Once
@@ -840,44 +767,43 @@ func file_mko_proto_rawDescGZIP() []byte {
 	return file_mko_proto_rawDescData
 }
 
-var file_mko_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_mko_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_mko_proto_goTypes = []any{
 	(*Empty)(nil),                      // 0: mko.workstation.v1.Empty
-	(*StandardResponse)(nil),           // 1: mko.workstation.v1.StandardResponse
-	(*StatusResponse)(nil),             // 2: mko.workstation.v1.StatusResponse
-	(*ConfigureOuRequest)(nil),         // 3: mko.workstation.v1.ConfigureOuRequest
-	(*SetOuResponseWordRequest)(nil),   // 4: mko.workstation.v1.SetOuResponseWordRequest
-	(*ReadOuSubaddressRequest)(nil),    // 5: mko.workstation.v1.ReadOuSubaddressRequest
-	(*OuSubaddressData)(nil),           // 6: mko.workstation.v1.OuSubaddressData
-	(*WriteOuSubaddressRequest)(nil),   // 7: mko.workstation.v1.WriteOuSubaddressRequest
-	(*SubscribeOuCommandsRequest)(nil), // 8: mko.workstation.v1.SubscribeOuCommandsRequest
-	(*OuCommandEvent)(nil),             // 9: mko.workstation.v1.OuCommandEvent
-	(*ClearBufferRequest)(nil),         // 10: mko.workstation.v1.ClearBufferRequest
+	(*StatusResponse)(nil),             // 1: mko.workstation.v1.StatusResponse
+	(*ConfigureOuRequest)(nil),         // 2: mko.workstation.v1.ConfigureOuRequest
+	(*SetOuResponseWordRequest)(nil),   // 3: mko.workstation.v1.SetOuResponseWordRequest
+	(*ReadOuSubaddressRequest)(nil),    // 4: mko.workstation.v1.ReadOuSubaddressRequest
+	(*OuSubaddressData)(nil),           // 5: mko.workstation.v1.OuSubaddressData
+	(*WriteOuSubaddressRequest)(nil),   // 6: mko.workstation.v1.WriteOuSubaddressRequest
+	(*SubscribeOuCommandsRequest)(nil), // 7: mko.workstation.v1.SubscribeOuCommandsRequest
+	(*OuCommandEvent)(nil),             // 8: mko.workstation.v1.OuCommandEvent
+	(*ClearBufferRequest)(nil),         // 9: mko.workstation.v1.ClearBufferRequest
 }
 var file_mko_proto_depIdxs = []int32{
-	0,  // 0: mko.workstation.v1.MkoWorkstationService.GetStatus:input_type -> mko.workstation.v1.Empty
-	3,  // 1: mko.workstation.v1.MkoWorkstationService.ConfigureOu:input_type -> mko.workstation.v1.ConfigureOuRequest
-	4,  // 2: mko.workstation.v1.MkoWorkstationService.SetOuResponseWord:input_type -> mko.workstation.v1.SetOuResponseWordRequest
-	5,  // 3: mko.workstation.v1.MkoWorkstationService.ReadOuSubaddress:input_type -> mko.workstation.v1.ReadOuSubaddressRequest
-	7,  // 4: mko.workstation.v1.MkoWorkstationService.WriteOuSubaddress:input_type -> mko.workstation.v1.WriteOuSubaddressRequest
-	7,  // 5: mko.workstation.v1.MkoWorkstationService.SendRawOuData:input_type -> mko.workstation.v1.WriteOuSubaddressRequest
-	8,  // 6: mko.workstation.v1.MkoWorkstationService.SubscribeOuCommands:input_type -> mko.workstation.v1.SubscribeOuCommandsRequest
-	10, // 7: mko.workstation.v1.MkoWorkstationService.ClearReceiveBuffer:input_type -> mko.workstation.v1.ClearBufferRequest
-	10, // 8: mko.workstation.v1.MkoWorkstationService.ClearTransmitBuffer:input_type -> mko.workstation.v1.ClearBufferRequest
-	2,  // 9: mko.workstation.v1.MkoWorkstationService.GetStatus:output_type -> mko.workstation.v1.StatusResponse
-	1,  // 10: mko.workstation.v1.MkoWorkstationService.ConfigureOu:output_type -> mko.workstation.v1.StandardResponse
-	1,  // 11: mko.workstation.v1.MkoWorkstationService.SetOuResponseWord:output_type -> mko.workstation.v1.StandardResponse
-	6,  // 12: mko.workstation.v1.MkoWorkstationService.ReadOuSubaddress:output_type -> mko.workstation.v1.OuSubaddressData
-	1,  // 13: mko.workstation.v1.MkoWorkstationService.WriteOuSubaddress:output_type -> mko.workstation.v1.StandardResponse
-	1,  // 14: mko.workstation.v1.MkoWorkstationService.SendRawOuData:output_type -> mko.workstation.v1.StandardResponse
-	9,  // 15: mko.workstation.v1.MkoWorkstationService.SubscribeOuCommands:output_type -> mko.workstation.v1.OuCommandEvent
-	1,  // 16: mko.workstation.v1.MkoWorkstationService.ClearReceiveBuffer:output_type -> mko.workstation.v1.StandardResponse
-	1,  // 17: mko.workstation.v1.MkoWorkstationService.ClearTransmitBuffer:output_type -> mko.workstation.v1.StandardResponse
-	9,  // [9:18] is the sub-list for method output_type
-	0,  // [0:9] is the sub-list for method input_type
-	0,  // [0:0] is the sub-list for extension type_name
-	0,  // [0:0] is the sub-list for extension extendee
-	0,  // [0:0] is the sub-list for field type_name
+	0, // 0: mko.workstation.v1.MkoWorkstationService.GetStatus:input_type -> mko.workstation.v1.Empty
+	2, // 1: mko.workstation.v1.MkoWorkstationService.ConfigureOu:input_type -> mko.workstation.v1.ConfigureOuRequest
+	3, // 2: mko.workstation.v1.MkoWorkstationService.SetOuResponseWord:input_type -> mko.workstation.v1.SetOuResponseWordRequest
+	4, // 3: mko.workstation.v1.MkoWorkstationService.ReadOuSubaddress:input_type -> mko.workstation.v1.ReadOuSubaddressRequest
+	6, // 4: mko.workstation.v1.MkoWorkstationService.WriteOuSubaddress:input_type -> mko.workstation.v1.WriteOuSubaddressRequest
+	6, // 5: mko.workstation.v1.MkoWorkstationService.SendRawOuData:input_type -> mko.workstation.v1.WriteOuSubaddressRequest
+	7, // 6: mko.workstation.v1.MkoWorkstationService.SubscribeOuCommands:input_type -> mko.workstation.v1.SubscribeOuCommandsRequest
+	9, // 7: mko.workstation.v1.MkoWorkstationService.ClearReceiveBuffer:input_type -> mko.workstation.v1.ClearBufferRequest
+	9, // 8: mko.workstation.v1.MkoWorkstationService.ClearTransmitBuffer:input_type -> mko.workstation.v1.ClearBufferRequest
+	1, // 9: mko.workstation.v1.MkoWorkstationService.GetStatus:output_type -> mko.workstation.v1.StatusResponse
+	0, // 10: mko.workstation.v1.MkoWorkstationService.ConfigureOu:output_type -> mko.workstation.v1.Empty
+	0, // 11: mko.workstation.v1.MkoWorkstationService.SetOuResponseWord:output_type -> mko.workstation.v1.Empty
+	5, // 12: mko.workstation.v1.MkoWorkstationService.ReadOuSubaddress:output_type -> mko.workstation.v1.OuSubaddressData
+	0, // 13: mko.workstation.v1.MkoWorkstationService.WriteOuSubaddress:output_type -> mko.workstation.v1.Empty
+	0, // 14: mko.workstation.v1.MkoWorkstationService.SendRawOuData:output_type -> mko.workstation.v1.Empty
+	8, // 15: mko.workstation.v1.MkoWorkstationService.SubscribeOuCommands:output_type -> mko.workstation.v1.OuCommandEvent
+	0, // 16: mko.workstation.v1.MkoWorkstationService.ClearReceiveBuffer:output_type -> mko.workstation.v1.Empty
+	0, // 17: mko.workstation.v1.MkoWorkstationService.ClearTransmitBuffer:output_type -> mko.workstation.v1.Empty
+	9, // [9:18] is the sub-list for method output_type
+	0, // [0:9] is the sub-list for method input_type
+	0, // [0:0] is the sub-list for extension type_name
+	0, // [0:0] is the sub-list for extension extendee
+	0, // [0:0] is the sub-list for field type_name
 }
 
 func init() { file_mko_proto_init() }
@@ -891,7 +817,7 @@ func file_mko_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mko_proto_rawDesc), len(file_mko_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
