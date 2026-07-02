@@ -1,0 +1,156 @@
+// Восстановленая версия их скомпилированных исходников, которые прислали
+
+syntax = "proto3";
+
+package mko.driver.v1;
+
+import "google/protobuf/empty.proto";
+
+message Empty {
+}
+
+message ActionRequest {
+  string operation_id = 1;
+  string board_id = 2;
+}
+
+message StandardResponse {
+  bool success = 1;
+  string error_message = 2;
+}
+
+message MkoConfigRequest {
+  int32 index = 1;
+  int32 mode = 2;
+  int32 channel = 3;
+  int32 bus_control = 4;
+  int32 ou_address = 5;
+  int32 ou_resp_word = 6;
+  int32 vector_word = 7;
+  int32 selftest_word = 8;
+  string local_ip = 9;
+  int32 local_port = 10;
+  string remote_ip = 11;
+  int32 remote_port = 12;
+  string operation_id = 13;
+  string board_id = 14;
+}
+
+message ExchangeConfigRequest {
+  int32 format = 1;
+  uint32 ks1 = 2;
+  uint32 ks2 = 3;
+  repeated uint32 sd = 4;
+  string operation_id = 5;
+  string board_id = 6;
+}
+
+message ExchangeResultResponse {
+  int32 format = 1;
+  uint32 ks1 = 2;
+  uint32 ks2 = 3;
+  repeated uint32 sd = 4;
+  uint32 answer_word_1 = 5;
+  uint32 answer_word_2 = 6;
+  uint32 result_word = 7;
+  string decoded_result = 8;
+}
+
+message WriteMemoryRequest {
+  uint32 address = 1;
+  bytes data = 2;
+  string operation_id = 3;
+  string board_id = 4;
+}
+
+message ReadMemoryRequest {
+  uint32 address = 1;
+  uint32 size = 2;
+  string operation_id = 3;
+  string board_id = 4;
+}
+
+message ReadMemoryResponse {
+  bytes data = 1;
+}
+
+message VersionInfo {
+  string version = 1;
+}
+
+message ConfigureOuRequest {
+  int32 index = 1;
+  int32 channel = 2;
+  int32 ou_address = 3;
+  int32 response_word = 4;
+  string remote_ip = 5;
+  int32 remote_port = 6;
+  string operation_id = 7;
+  string board_id = 8;
+}
+
+message BoardRequest {
+  string board_id = 1;
+}
+
+message OuCommandEvent {
+  uint32 cmd_word = 1;
+  uint32 result_word = 2;
+  bool receive_from_ou = 3;
+  uint32 ou_address = 4;
+  uint32 subaddress = 5;
+  uint32 word_count = 6;
+  string decoded_command = 7;
+  string decoded_result = 8;
+}
+
+message ReadOuSubaddressRequest {
+  uint32 subaddress = 1;
+  bool receive_area = 2;
+  string operation_id = 3;
+  string board_id = 4;
+}
+
+message OuSubaddressData {
+  bool success = 1;
+  string error_message = 2;
+  uint32 subaddress = 3;
+  repeated uint32 sd = 4;
+  uint32 cmd_word = 5;
+  uint32 result_word = 6;
+  string decoded_result = 7;
+}
+
+message WriteOuSubaddressRequest {
+  uint32 subaddress = 1;
+  repeated uint32 sd = 2;
+  string operation_id = 3;
+  string board_id = 4;
+}
+
+message SetOuResponseWordRequest {
+  int32 index = 1;
+  int32 channel = 2;
+  int32 ou_address = 3;
+  int32 response_word = 4;
+  string operation_id = 5;
+  string board_id = 6;
+}
+
+service MkoDriver {
+  rpc ConfigureMko(MkoConfigRequest) returns (StandardResponse);
+  rpc ConfigureExchange(ExchangeConfigRequest) returns (StandardResponse);
+  rpc SendCommandRun(ActionRequest) returns (StandardResponse);
+  rpc ReadExchangeConfig(ActionRequest) returns (StandardResponse);
+  rpc SubscribeExchangeResults(Empty) returns (stream ExchangeResultResponse);
+  rpc SubscribeExchangeResultsForBoard(BoardRequest) returns (stream ExchangeResultResponse);
+  rpc ConfigureOu(ConfigureOuRequest) returns (StandardResponse);
+  rpc SubscribeOuCommands(Empty) returns (stream OuCommandEvent);
+  rpc SubscribeOuCommandsForBoard(BoardRequest) returns (stream OuCommandEvent);
+  rpc ReadOuSubaddress(ReadOuSubaddressRequest) returns (OuSubaddressData);
+  rpc WriteOuSubaddress(WriteOuSubaddressRequest) returns (StandardResponse);
+  rpc SetOuResponseWord(SetOuResponseWordRequest) returns (StandardResponse);
+  rpc WriteMemory(WriteMemoryRequest) returns (StandardResponse);
+  rpc ReadMemory(ReadMemoryRequest) returns (ReadMemoryResponse);
+  rpc GetVersion(google.protobuf.Empty) returns (VersionInfo);
+}
