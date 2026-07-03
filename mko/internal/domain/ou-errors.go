@@ -2,23 +2,8 @@ package domain
 
 import (
 	"errors"
+	"fmt"
 )
-
-// ============================================================
-// Ошибки домена
-// ============================================================
-//
-// Базовые ошибки — sentinel-значения через errors.New. Конкретные
-// ошибки создаются через fmt.Errorf("...: %w", ErrXxx) — без
-// собственного типа, errors.Is прекрасно работает и с обычным
-// оборачиванием через %w. Service-слой классифицирует через
-// errors.Is(err, domain.ErrXxx) и маппит в gRPC status.Code:
-//   ErrValidation        -> codes.InvalidArgument
-//   ErrDeviceRejected    -> codes.FailedPrecondition
-//   ErrTimeout           -> codes.DeadlineExceeded
-//   ErrDriverUnavailable -> codes.Unavailable
-//   ErrNotImplemented    -> codes.Unimplemented
-// Всё, что не завёрнуто ни в одну из них — codes.Internal.
 
 var (
 	ErrValidation        = errors.New("validation failed")
@@ -27,3 +12,26 @@ var (
 	ErrDriverUnavailable = errors.New("driver unavailable")
 	ErrNotImplemented    = errors.New("not implemented by driver")
 )
+
+// NewValidationError — например: domain.NewValidationError("subaddress", "must be in 0..30")
+func NewValidationError(field, message string) error {
+	return fmt.Errorf("%s: %s: %w", field, message, ErrValidation)
+}
+
+// WrapDeviceRejected, WrapTimeout, WrapDriverUnavailable, WrapNotImplemented —
+// добавляют текст поверх sentinel-а через %w, без собственного типа.
+func WrapDeviceRejected(message string) error {
+	return fmt.Errorf("%s: %w", message, ErrDeviceRejected)
+}
+
+func WrapTimeout(message string) error {
+	return fmt.Errorf("%s: %w", message, ErrTimeout)
+}
+
+func WrapDriverUnavailable(message string) error {
+	return fmt.Errorf("%s: %w", message, ErrDriverUnavailable)
+}
+
+func WrapNotImplemented(message string) error {
+	return fmt.Errorf("%s: %w", message, ErrNotImplemented)
+}
