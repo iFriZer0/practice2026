@@ -1,0 +1,8 @@
+src/driver/main.cpp
+src/driver/service_driver_adapter.cpp
+src/driver/service_driver_adapter.h
+src/service/main.cpp
+src/service/service.proto
+src/service/ui_service_adapter.cpp
+src/service/ui_service_adapter.h
+src/ui/main.cpp

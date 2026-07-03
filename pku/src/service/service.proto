@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package api;
+
+// Запрос от пользовательского интерфейса (UI) к сервису
+message ServiceRequest {
+  string request_id = 1;
+  string request_text = 2;
+}
+
+// Ответ от сервиса обратно в пользовательский интерфейс (UI)
+message ServiceResponse {
+  string status = 1;
+  string message = 2;
+}
+
+// Сервис, который делает обмен данных
+service MainService {
+  rpc DoWork (ServiceRequest) returns (ServiceResponse);
+}
