@@ -1,10 +1,11 @@
-#include <iostream>
 #include <memory>
 #include <new>
 #include <utility>
 #include <QStackedWidget>
 #include "qt_main_view_builder.h"
 #include "qt_main_view.h"
+#include "qt_main_view_builder_factory_error.h"
+#include "qt_main_view_builder_memory_error.h"
 #include "view.h"
 #include "simple_creator_maker.h"
 #include "simple_creator.h"
@@ -27,7 +28,7 @@ std::unique_ptr<View> QtMainViewBuilder::build_view()
     }
     catch (const Error &error)
     {
-        std::cerr << "Не удалось создать окно: " << error.what() << std::endl;
+        throw QtMainViewBuilderFactoryError{error.what(), error.get_first_error(), error.get_data()};
     }
     return view;
 }
@@ -72,8 +73,7 @@ QStackedWidget *QtMainViewBuilder::create_stacked_widget() const
     }
     catch (const std::bad_alloc &)
     {
-        std::cerr << "Не удалось создать QStackedWidget." << std::endl;
+        throw QtMainViewBuilderMemoryError{"Memory allocation failed.", typeid(QtMainViewBuilderMemoryError)};
     }
-
     return stacked_widget;
 }

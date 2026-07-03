@@ -18,6 +18,8 @@ INCLUDEPATH += \
 
 SOURCES += \
     application/application.cpp \
+    application/factory/errors/qt_main_view_builder_factory_error.cpp \
+    application/factory/errors/qt_main_view_builder_memory_error.cpp \
     application/factory/errors/view_builder_error.cpp \
     application/factory/errors/view_director_build_error.cpp \
     application/factory/errors/view_director_error.cpp \
@@ -31,6 +33,7 @@ SOURCES += \
     factory/errors/simple_creator_maker_memory_error.cpp \
     factory/errors/simple_creator_memory_error.cpp \
     factory/errors/solution_error.cpp \
+    factory/errors/solution_memory_error.cpp \
     graphical_views/views/main/qt_main_view.cpp \
     graphical_views/views/main/qt_view_mko.cpp \
     graphical_views/views/main/qt_view_pku.cpp \
@@ -40,6 +43,8 @@ SOURCES += \
 
 HEADERS += \
     application/application.h \
+    application/factory/errors/qt_main_view_builder_factory_error.h \
+    application/factory/errors/qt_main_view_builder_memory_error.h \
     application/factory/errors/view_builder_error.h \
     application/factory/errors/view_director_build_error.h \
     application/factory/errors/view_director_error.h \
@@ -56,6 +61,7 @@ HEADERS += \
     factory/errors/simple_creator_maker_memory_error.h \
     factory/errors/simple_creator_memory_error.h \
     factory/errors/solution_error.h \
+    factory/errors/solution_memory_error.h \
     factory/errors/solution_no_maker_error.h \
     factory/errors/solution_no_maker_error.hpp \
     factory/simple_creator.h \
