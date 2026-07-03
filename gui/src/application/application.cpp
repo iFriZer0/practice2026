@@ -18,14 +18,14 @@ int Application::start(int argc, char **argv) noexcept
     try
     {
         view = view_solution.make(BUILT)->create(*builder_solution.make(QT)->create());
+        view->show();
+        error = application.exec();
     }
     catch (const Error &exception)
     {
         std::cerr << "Не удалось запустить программу: " << exception.what() << std::endl;
         error = ERROR;
     }
-    view->show();
-    error = application.exec();
     return error;
 }
 
