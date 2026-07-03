@@ -12,7 +12,9 @@ class Error : public std::exception
 public:
     Error(const char *const message, const std::type_info &first_error, const std::any &data) noexcept;
 
-    const char *what() const noexcept;
+    const char *what() const noexcept override;
+
+    const std::type_info &get_first_error() const noexcept;
 
     std::any get_data() const noexcept;
 private:

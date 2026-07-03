@@ -14,23 +14,24 @@ MainWindow::MainWindow(
         const std::shared_ptr<View> &view_rs_485,
         const std::shared_ptr<View> &view_mko,
         const std::shared_ptr<View> &view_pku,
+        QStackedWidget *const stacked_widget,
         QWidget *parent
 )
     : QMainWindow(parent),
       tab_bar{create_tab_bar()},
-      stacked_widget{create_stacked_widget()},
+      stacked_widget{stacked_widget},
       views{{TAB_RS_485, view_rs_485}, {TAB_MKO, view_mko}, {TAB_PKU, view_pku}}
 {
-    QWidget *central = create_widget();
+    QWidget *central{create_widget()};
     setCentralWidget(central);
     tab_bar->addTab("RS-485");
     tab_bar->addTab("МКО");
     tab_bar->addTab("РК/ПКУ");
-    QVBoxLayout *layout = create_v_box_layout();
+    QVBoxLayout *layout{create_v_box_layout(central)};
     layout->addWidget(tab_bar);
     layout->addWidget(stacked_widget);
-    QObject::connect(tab_bar, &QTabBar::currentChanged, this, &MainWindow::onTabChanged);
-    onTabChanged(0);
+    QObject::connect(tab_bar, &QTabBar::currentChanged, this, &MainWindow::switch_tab);
+    switch_tab(TAB_RS_485);
 }
 
 QTabBar *MainWindow::create_tab_bar() const
@@ -61,12 +62,12 @@ QWidget *MainWindow::create_widget() const
     return widget;
 }
 
-QVBoxLayout *MainWindow::create_v_box_layout() const
+QVBoxLayout *MainWindow::create_v_box_layout(QWidget *const parent) const
 {
     QVBoxLayout *layout;
     try
     {
-        layout = new QVBoxLayout{};
+        layout = new QVBoxLayout{parent};
     }
     catch (const std::bad_alloc &)
     {
@@ -76,22 +77,7 @@ QVBoxLayout *MainWindow::create_v_box_layout() const
     return layout;
 }
 
-QStackedWidget *MainWindow::create_stacked_widget() const
-{
-    QStackedWidget *stacked_widget;
-    try
-    {
-        stacked_widget = new QStackedWidget{};
-    }
-    catch (const std::bad_alloc &)
-    {
-        std::cerr << "Не удалось создать QStackedWidget." << std::endl;
-    }
-
-    return stacked_widget;
-}
-
-void MainWindow::onTabChanged(const int &index)
+void MainWindow::switch_tab(int index)
 {
     try
     {

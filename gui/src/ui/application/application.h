@@ -2,10 +2,28 @@
 
 #define APPLICATION_H__
 
+#include "solution.h"
+#include "view.h"
+#include "view_builder.h"
+
 class Application
 {
 public:
-    static void start() noexcept;
+    static int start(int argc, char **argv) noexcept;
+private:
+    enum ViewBuilders
+    {
+        QT
+    };
+
+    enum Views
+    {
+        BUILT
+    };
+
+    static const Solution<ViewBuilder, ViewBuilders> builder_solution;
+
+    static const Solution<View, Views, ViewBuilder &> view_solution;
 };
 
 #endif

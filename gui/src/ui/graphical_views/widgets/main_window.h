@@ -19,6 +19,7 @@ public:
             const std::shared_ptr<View> &view_rs_485,
             const std::shared_ptr<View> &view_mko,
             const std::shared_ptr<View> &view_pku,
+            QStackedWidget *const stacked_widget,
             QWidget *parent = nullptr
     );
 
@@ -37,11 +38,9 @@ private:
 
     QWidget *create_widget() const;
 
-    QVBoxLayout *create_v_box_layout() const;
-
-    QStackedWidget *create_stacked_widget() const;
+    QVBoxLayout *create_v_box_layout(QWidget *const parent) const;
 private slots:
-    void onTabChanged(const int &index);
+    void switch_tab(int index);
 };
 
 #endif

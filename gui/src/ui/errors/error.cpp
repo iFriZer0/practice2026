@@ -14,6 +14,11 @@ const char *Error::what() const noexcept
     return message;
 }
 
+const std::type_info &Error::get_first_error() const noexcept
+{
+    return first_error;
+}
+
 std::any Error::get_data() const noexcept
 {
     return data;
