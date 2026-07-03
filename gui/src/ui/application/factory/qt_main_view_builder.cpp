@@ -66,7 +66,7 @@ const Solution<View, QtMainViewBuilder::Views, QStackedWidget *const> QtMainView
 
 QStackedWidget *QtMainViewBuilder::create_stacked_widget() const
 {
-    QStackedWidget *stacked_widget;
+    QStackedWidget *stacked_widget{nullptr};
     try
     {
         stacked_widget = new QStackedWidget{};

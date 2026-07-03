@@ -27,7 +27,7 @@ void QtViewMKO::show()
 
 QWidget *QtViewMKO::create_widget() const
 {
-    QWidget *widget;
+    QWidget *widget{nullptr};
     try
     {
         widget = new QWidget{};
@@ -41,7 +41,7 @@ QWidget *QtViewMKO::create_widget() const
 
 QVBoxLayout *QtViewMKO::create_v_box_layout(QWidget *const parent) const
 {
-    QVBoxLayout *layout;
+    QVBoxLayout *layout{nullptr};
     try
     {
         layout = new QVBoxLayout{parent};
@@ -55,7 +55,7 @@ QVBoxLayout *QtViewMKO::create_v_box_layout(QWidget *const parent) const
 
 QLabel *QtViewMKO::create_label(const QString &text) const
 {
-    QLabel *label;
+    QLabel *label{nullptr};
     try
     {
         label = new QLabel{text};
@@ -64,6 +64,5 @@ QLabel *QtViewMKO::create_label(const QString &text) const
     {
         std::cerr << "Не удалось создать QLabel." << std::endl;
     }
-
     return label;
 }

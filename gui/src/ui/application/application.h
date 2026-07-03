@@ -11,6 +11,8 @@ class Application
 public:
     static int start(int argc, char **argv) noexcept;
 private:
+    static constexpr int ERROR{1};
+
     enum ViewBuilders
     {
         QT

@@ -36,7 +36,7 @@ MainWindow::MainWindow(
 
 QTabBar *MainWindow::create_tab_bar() const
 {
-    QTabBar *tab_bar;
+    QTabBar *tab_bar{nullptr};
     try
     {
         tab_bar = new QTabBar{};
@@ -50,7 +50,7 @@ QTabBar *MainWindow::create_tab_bar() const
 
 QWidget *MainWindow::create_widget() const
 {
-    QWidget *widget;
+    QWidget *widget{nullptr};
     try
     {
         widget = new QWidget{};
@@ -64,7 +64,7 @@ QWidget *MainWindow::create_widget() const
 
 QVBoxLayout *MainWindow::create_v_box_layout(QWidget *const parent) const
 {
-    QVBoxLayout *layout;
+    QVBoxLayout *layout{nullptr};
     try
     {
         layout = new QVBoxLayout{parent};

@@ -27,7 +27,7 @@ void QtViewPKU::show()
 
 QWidget *QtViewPKU::create_widget() const
 {
-    QWidget *widget;
+    QWidget *widget{nullptr};
     try
     {
         widget = new QWidget{};
@@ -41,7 +41,7 @@ QWidget *QtViewPKU::create_widget() const
 
 QVBoxLayout *QtViewPKU::create_v_box_layout(QWidget *const parent) const
 {
-    QVBoxLayout *layout;
+    QVBoxLayout *layout{nullptr};
     try
     {
         layout = new QVBoxLayout{parent};
@@ -55,7 +55,7 @@ QVBoxLayout *QtViewPKU::create_v_box_layout(QWidget *const parent) const
 
 QLabel *QtViewPKU::create_label(const QString &text) const
 {
-    QLabel *label;
+    QLabel *label{nullptr};
     try
     {
         label = new QLabel{text};

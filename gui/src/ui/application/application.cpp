@@ -1,3 +1,4 @@
+#include <iostream>
 #include <memory>
 #include <utility>
 #include <QApplication>
@@ -12,9 +13,20 @@
 int Application::start(int argc, char **argv) noexcept
 {
     QApplication application{argc, argv};
-    std::unique_ptr<View> view{view_solution.make(BUILT)->create(*builder_solution.make(QT)->create())};
+    std::unique_ptr<View> view;
+    int error;
+    try
+    {
+        view = view_solution.make(BUILT)->create(*builder_solution.make(QT)->create());
+    }
+    catch (const Error &exception)
+    {
+        std::cerr << "Не удалось запустить программу: " << exception.what() << std::endl;
+        error = ERROR;
+    }
     view->show();
-    return application.exec();
+    error = application.exec();
+    return error;
 }
 
 const Solution<ViewBuilder, Application::ViewBuilders> Application::builder_solution

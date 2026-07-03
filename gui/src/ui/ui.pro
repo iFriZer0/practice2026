@@ -84,3 +84,13 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 DISTFILES += \
     .clangd
+
+DESTDIR = $$PWD/build/out
+
+OBJECTS_DIR = $$PWD/build/obj
+
+MOC_DIR = $$PWD/build/moc
+
+UI_DIR = $$PWD/build/ui
+
+RCC_DIR = $$PWD/build/rcc
