@@ -14,12 +14,12 @@ type KKServiceInterface interface {
 
 func (s *MKOServer) ConfigureMko(ctx context.Context, req *mkoapiv1.MkoConfigRequest) (*mkoapiv1.StandardResponse, error) {
 	err := s.kkServer.ConfigureKK(ctx, domain.KKConfig{
-		Index:        int(req.Index),
-		Channel:      int(req.Channel),
-		BusControl:   int(req.BusControl),
+		Index:        domain.McoIndex(req.Index),
+		Channel:      domain.Channel(req.Channel),
+		BusControl:   domain.BusControl(req.BusControl),
 		OUAddress:    int(req.OuAddress),
 		OURespWord:   uint32(req.OuRespWord),
-		VectorWord:   uint32(req.VectorWord),
+		VectorWord:   domain.Ve(req.VectorWord),
 		SelftestWord: uint32(req.SelftestWord),
 		RemoteIP:     req.RemoteIp,
 		RemotePort:   int(req.RemotePort),
