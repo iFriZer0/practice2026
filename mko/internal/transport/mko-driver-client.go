@@ -2,63 +2,75 @@ package transport
 
 import (
 	"context"
+	"fmt"
 	"io"
+
 	"mko/internal/domain"
 	"mko/internal/service"
+	mkodriverv1 "mko/internal/transport/clients/mko-driver-service/gen/mkodriverv1"
 )
 
 type MKODriverClient struct {
-	client mkoapiv1.MkoDriverClient
+	client mkodriverv1.MkoDriverClient
 }
 
 var _ service.KKDriver = (*MKODriverClient)(nil)
 
-func NewMKODriverClient(client mkoapiv1.MkoDriverClient) *MKODriverClient {
+func NewMKODriverClient(client mkodriverv1.MkoDriverClient) *MKODriverClient {
 	return &MKODriverClient{
 		client: client,
 	}
 }
 
 func (c *MKODriverClient) ConfigureMko(ctx context.Context, cfg domain.KKConfig) error {
-	_, err := c.client.ConfigureMko(ctx, &mkoapiv1.MkoConfigRequest{
+	resp, err := c.client.ConfigureMko(ctx, &mkodriverv1.MkoConfigRequest{
 		Index:        int32(cfg.Index),
-		Mode:         1,
+		Mode:         int32(domain.ModeKk),
 		Channel:      int32(cfg.Channel),
 		BusControl:   int32(cfg.BusControl),
-		OuAddress:    int32(cfg.OUAddress),
-		OuRespWord:   int32(cfg.OURespWord),
-		VectorWord:   int32(cfg.VectorWord),
-		SelftestWord: int32(cfg.SelftestWord),
+		OuAddress:    cfg.OuAddress,
+		OuRespWord:   cfg.OuRespWord,
+		VectorWord:   cfg.VectorWord,
+		SelftestWord: cfg.SelftestWord,
 		RemoteIp:     cfg.RemoteIP,
-		RemotePort:   int32(cfg.RemotePort),
+		RemotePort:   cfg.RemotePort,
 		OperationId:  cfg.OperationID,
-		BoardId:      cfg.BoardID,
+		BoardId:      string(cfg.Board),
 	})
-	return err
+	if err != nil {
+		return err
+	}
+	return standardResponseError(resp)
 }
 
 func (c *MKODriverClient) ConfigureExchange(ctx context.Context, cfg domain.ExchangeConfig) error {
-	_, err := c.client.ConfigureExchange(ctx, &mkoapiv1.ExchangeConfigRequest{
+	resp, err := c.client.ConfigureExchange(ctx, &mkodriverv1.ExchangeConfigRequest{
 		Format:      cfg.Format,
 		Ks1:         cfg.KS1,
 		Ks2:         cfg.KS2,
 		Sd:          cfg.SD,
 		OperationId: cfg.OperationID,
-		BoardId:     cfg.BoardID,
+		BoardId:     string(cfg.Board),
 	})
-	return err
+	if err != nil {
+		return err
+	}
+	return standardResponseError(resp)
 }
 
 func (c *MKODriverClient) SendCommandRun(ctx context.Context, cmd domain.RunExchangeCommand) error {
-	_, err := c.client.SendCommandRun(ctx, &mkoapiv1.ActionRequest{
+	resp, err := c.client.SendCommandRun(ctx, &mkodriverv1.ActionRequest{
 		OperationId: cmd.OperationID,
-		BoardId:     cmd.BoardID,
+		BoardId:     string(cmd.Board),
 	})
-	return err
+	if err != nil {
+		return err
+	}
+	return standardResponseError(resp)
 }
 
 func (c *MKODriverClient) SubscribeExchangeResults(ctx context.Context, boardID string) (<-chan domain.ExchangeResult, error) {
-	stream, err := c.client.SubscribeExchangeResultsForBoard(ctx, &mkoapiv1.BoardRequest{
+	stream, err := c.client.SubscribeExchangeResultsForBoard(ctx, &mkodriverv1.BoardRequest{
 		BoardId: boardID,
 	})
 	if err != nil {
@@ -79,15 +91,27 @@ func (c *MKODriverClient) SubscribeExchangeResults(ctx context.Context, boardID 
 			}
 
 			results <- domain.ExchangeResult{
-				Format:       msg.Format,
-				KS1:          msg.Ks1,
-				KS2:          msg.Ks2,
-				SD:           msg.Sd,
-				AnswerWord1:  msg.AnswerWord_1,
-				AnswerWord2:  msg.AnswerWord_2,
-				DecodeResult: msg.DecodedResult,
+				Board:         domain.BoardID(boardID),
+				Format:        msg.GetFormat(),
+				KS1:           msg.GetKs1(),
+				KS2:           msg.GetKs2(),
+				SD:            msg.GetSd(),
+				AnswerWord1:   msg.GetAnswerWord_1(),
+				AnswerWord2:   msg.GetAnswerWord_2(),
+				ResultWord:    msg.GetResultWord(),
+				DecodedResult: msg.GetDecodedResult(),
 			}
 		}
 	}()
 	return results, nil
+}
+
+func standardResponseError(resp *mkodriverv1.StandardResponse) error {
+	if resp == nil {
+		return fmt.Errorf("%w: empty driver response", domain.ErrDriverUnavailable)
+	}
+	if resp.GetSuccess() {
+		return nil
+	}
+	return fmt.Errorf("%w: %s", domain.ErrDeviceRejected, resp.GetErrorMessage())
 }

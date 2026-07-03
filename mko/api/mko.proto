@@ -26,6 +26,10 @@ service MkoWorkstationService {
   rpc ClearTransmitBuffer(ClearBufferRequest) returns (Empty);
 
   // часть для KK
+  rpc ConfigureKK(ConfigureKKRequest) returns (Empty);
+  rpc ConfigureExchange(ConfigureExchangeRequest) returns (Empty);
+  rpc RunExchange(RunExchangeRequest) returns (Empty);
+  rpc SubscribeExchangeResults(SubscribeExchangeResultsRequest) returns (stream ExchangeResult);
 }
 
 message Empty {
@@ -93,4 +97,47 @@ message OuCommandEvent {
 message ClearBufferRequest {
   string board_id = 1;
   int32 index = 2;
+}
+
+message ConfigureKKRequest {
+  string board_id = 1;
+  int32 index = 2;
+  int32 channel = 3;
+  int32 bus_control = 4;
+  int32 ou_address = 5;
+  int32 ou_resp_word = 6;
+  int32 vector_word = 7;
+  int32 selftest_word = 8;
+  string remote_ip = 9;
+  int32 remote_port = 10;
+  string operation_id = 11;
+}
+
+message ConfigureExchangeRequest {
+  string board_id = 1;
+  int32 format = 2;
+  uint32 ks1 = 3;
+  uint32 ks2 = 4;
+  repeated uint32 sd = 5;
+  string operation_id = 6;
+}
+
+message RunExchangeRequest {
+  string board_id = 1;
+  string operation_id = 2;
+}
+
+message SubscribeExchangeResultsRequest {
+  string board_id = 1;
+}
+
+message ExchangeResult {
+  int32 format = 1;
+  uint32 ks1 = 2;
+  uint32 ks2 = 3;
+  repeated uint32 sd = 4;
+  uint32 answer_word_1 = 5;
+  uint32 answer_word_2 = 6;
+  uint32 result_word = 7;
+  string decoded_result = 8;
 }
