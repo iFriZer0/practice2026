@@ -56,7 +56,7 @@ func (c *Client) ConfigureOu(ctx context.Context, cfg domain.OuConfig) error {
 	ctx, cancel := context.WithTimeout(ctx, unaryTimeout)
 	defer cancel()
 
-	_, err := c.grpc.ConfigureOu(ctx, &mkodriverv1.ConfigureOuRequest{
+	resp, err := c.grpc.ConfigureOu(ctx, &mkodriverv1.ConfigureOuRequest{
 		Index:        int32(cfg.Index),
 		Channel:      int32(cfg.Channel),
 		OuAddress:    cfg.OuAddress,
@@ -66,14 +66,24 @@ func (c *Client) ConfigureOu(ctx context.Context, cfg domain.OuConfig) error {
 		BoardId:      string(cfg.Board),
 		OperationId:  newOperationID(),
 	})
-	return mapDriverError(err)
+	if err != nil {
+		return mapDriverError(err)
+	}
+	// ВАЖНО: драйвер после конфигурации сам делает readMainInfo() и
+	// при недоступности платы возвращает success=false БЕЗ grpc-ошибки
+	// (см. документацию mko_driver, раздел ConfigureMko/ConfigureOu).
+	// Проверка только err здесь недостаточна — это и была причина бага.
+	if !resp.GetSuccess() {
+		return domain.WrapDeviceRejected(resp.GetErrorMessage())
+	}
+	return nil
 }
 
 func (c *Client) SetOuResponseWord(ctx context.Context, board domain.BoardID, index domain.McoIndex, channel domain.Channel, ouAddress int32, word int32) error {
 	ctx, cancel := context.WithTimeout(ctx, unaryTimeout)
 	defer cancel()
 
-	_, err := c.grpc.SetOuResponseWord(ctx, &mkodriverv1.SetOuResponseWordRequest{
+	resp, err := c.grpc.SetOuResponseWord(ctx, &mkodriverv1.SetOuResponseWordRequest{
 		Index:        int32(index),
 		Channel:      int32(channel),
 		OuAddress:    ouAddress,
@@ -81,7 +91,13 @@ func (c *Client) SetOuResponseWord(ctx context.Context, board domain.BoardID, in
 		BoardId:      string(board),
 		OperationId:  newOperationID(),
 	})
-	return mapDriverError(err)
+	if err != nil {
+		return mapDriverError(err)
+	}
+	if !resp.GetSuccess() {
+		return domain.WrapDeviceRejected(resp.GetErrorMessage())
+	}
+	return nil
 }
 
 func (c *Client) ReadOuSubaddress(ctx context.Context, board domain.BoardID, sub uint32, receiveArea bool) (domain.OuSubaddressData, error) {
@@ -115,13 +131,19 @@ func (c *Client) WriteOuSubaddress(ctx context.Context, board domain.BoardID, su
 	ctx, cancel := context.WithTimeout(ctx, unaryTimeout)
 	defer cancel()
 
-	_, err := c.grpc.WriteOuSubaddress(ctx, &mkodriverv1.WriteOuSubaddressRequest{
+	resp, err := c.grpc.WriteOuSubaddress(ctx, &mkodriverv1.WriteOuSubaddressRequest{
 		Subaddress:  sub,
 		Sd:          sd,
 		BoardId:     string(board),
 		OperationId: newOperationID(),
 	})
-	return mapDriverError(err)
+	if err != nil {
+		return mapDriverError(err)
+	}
+	if !resp.GetSuccess() {
+		return domain.WrapDeviceRejected(resp.GetErrorMessage())
+	}
+	return nil
 }
 
 // SubscribeOuCommands открывает долгоживущий стрим к драйверу и
