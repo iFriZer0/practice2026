@@ -1,3 +1,5 @@
+Makefile
+src/driver/driver_stub.h
 src/driver/main.cpp
 src/driver/service_driver_adapter.cpp
 src/driver/service_driver_adapter.h
@@ -6,3 +8,5 @@ src/service/service.proto
 src/service/ui_service_adapter.cpp
 src/service/ui_service_adapter.h
 src/ui/main.cpp
+src/ui/mainwindow.cpp
+src/ui/mainwindow.h
