@@ -3,7 +3,6 @@ package domain
 // KKConfig — конфигурация контроллера канала. В mko_driver она
 // отправляется через ConfigureMko с mode=1.
 type KKConfig struct {
-	Board        BoardID
 	Index        McoIndex
 	Channel      Channel
 	BusControl   BusControl
@@ -14,6 +13,7 @@ type KKConfig struct {
 	RemoteIP     string
 	RemotePort   int32
 	OperationID  string
+	Board        BoardID
 }
 
 // ExchangeConfig — конфигурация обмена КК: формат, командные слова

@@ -2,7 +2,11 @@ package transport
 
 import (
 	"context"
+
+	mkoapiv1 "mko/api/gen"
 	"mko/internal/domain"
+
+	"google.golang.org/grpc"
 )
 
 type KKServiceInterface interface {
@@ -12,86 +16,77 @@ type KKServiceInterface interface {
 	SubscribeExchangeResults(ctx context.Context, boardID string) (<-chan domain.ExchangeResult, error)
 }
 
-func (s *MKOServer) ConfigureMko(ctx context.Context, req *mkoapiv1.MkoConfigRequest) (*mkoapiv1.StandardResponse, error) {
-	err := s.kkServer.ConfigureKK(ctx, domain.KKConfig{
-		Index:        domain.McoIndex(req.Index),
-		Channel:      domain.Channel(req.Channel),
-		BusControl:   domain.BusControl(req.BusControl),
-		OUAddress:    int(req.OuAddress),
-		OURespWord:   uint32(req.OuRespWord),
-		VectorWord:   domain.Ve(req.VectorWord),
-		SelftestWord: uint32(req.SelftestWord),
-		RemoteIP:     req.RemoteIp,
-		RemotePort:   int(req.RemotePort),
-		OperationID:  req.OperationId,
-		BoardID:      req.BoardId,
-	})
-	if err != nil {
-		return failResponse(err), nil
+func (m *MKOServer) ConfigureKK(ctx context.Context, req *mkoapiv1.ConfigureKKRequest) (*mkoapiv1.Empty, error) {
+	cfg := domain.KKConfig{
+		Board:        domain.BoardID(req.GetBoardId()),
+		Index:        domain.McoIndex(req.GetIndex()),
+		Channel:      domain.Channel(req.GetChannel()),
+		BusControl:   domain.BusControl(req.GetBusControl()),
+		OuAddress:    req.GetOuAddress(),
+		OuRespWord:   req.GetOuRespWord(),
+		VectorWord:   req.GetVectorWord(),
+		SelftestWord: req.GetSelftestWord(),
+		RemoteIP:     req.GetRemoteIp(),
+		RemotePort:   req.GetRemotePort(),
+		OperationID:  req.GetOperationId(),
 	}
 
-	return okResponse(), nil
-}
-
-func (s *MKOServer) ConfigureExcnage(ctx context.Context, req *mkoapiv1.ExchangeConfigRequest) (*mkoapiv1.StandardResponse, error) {
-	err := s.kkServer.ConfigureExchange(ctx, domain.ExchangeConfig{
-		Format:      req.Format,
-		KS1:         req.Ks1,
-		KS2:         req.Ks2,
-		SD:          req.Sd,
-		OperationID: req.OperationId,
-		BoardID:     req.BoardId,
-	})
-	if err != nil {
-		return failResponse(err), nil
+	if err := m.kkService.ConfigureKK(ctx, cfg); err != nil {
+		return nil, toGRPCStatus(err)
 	}
-	return okResponse(), nil
+	return &mkoapiv1.Empty{}, nil
 }
 
-func (s *MKOServer) SendCommandRun(ctx context.Context, req *mkoapiv1.ActionRequest) (*mkoapiv1.StandardResponse, error) {
-	err := s.kkServer.RunExchange(ctx, domain.RunExchangeCommand{
-		OperationID: req.OperationId,
-		BoardID:     req.BoardId,
-	})
-	if err != nil {
-		return failResponse(err), nil
+func (m *MKOServer) ConfigureExchange(ctx context.Context, req *mkoapiv1.ConfigureExchangeRequest) (*mkoapiv1.Empty, error) {
+	cfg := domain.ExchangeConfig{
+		Board:       domain.BoardID(req.GetBoardId()),
+		Format:      req.GetFormat(),
+		KS1:         req.GetKs1(),
+		KS2:         req.GetKs2(),
+		SD:          req.GetSd(),
+		OperationID: req.GetOperationId(),
 	}
-	return okResponse(), nil
+
+	if err := m.kkService.ConfigureExchange(ctx, cfg); err != nil {
+		return nil, toGRPCStatus(err)
+	}
+	return &mkoapiv1.Empty{}, nil
 }
 
-func (s *MKOServer) SubscribeExchangeResultsForBoard(
-	req *mkoapiv1.BoardRequest,
-	stream mkoapiv1.MkoWorkstationService_SubscribeExchangeResultsForBoardServer,
+func (m *MKOServer) RunExchange(ctx context.Context, req *mkoapiv1.RunExchangeRequest) (*mkoapiv1.Empty, error) {
+	cfg := domain.RunExchangeCommand{
+		Board:       domain.BoardID(req.GetBoardId()),
+		OperationID: req.GetOperationId(),
+	}
+
+	if err := m.kkService.RunExchange(ctx, cfg); err != nil {
+		return nil, toGRPCStatus(err)
+	}
+	return &mkoapiv1.Empty{}, nil
+}
+
+func (m *MKOServer) SubscribeExchangeResults(
+	req *mkoapiv1.SubscribeExchangeResultsRequest,
+	stream grpc.ServerStreamingServer[mkoapiv1.ExchangeResult],
 ) error {
-	results, err := s.kkServer.SubscribeExchangeResults(stream.Context(), req.BoardId)
+	results, err := m.kkService.SubscribeExchangeResults(stream.Context(), req.GetBoardId())
 	if err != nil {
-		return err
+		return toGRPCStatus(err)
 	}
+
 	for result := range results {
-		if err := stream.Send(&mkoapiv1.ExchangeResultResponse{
+		if err := stream.Send(&mkoapiv1.ExchangeResult{
 			Format:        result.Format,
 			Ks1:           result.KS1,
 			Ks2:           result.KS2,
 			Sd:            result.SD,
 			AnswerWord_1:  result.AnswerWord1,
 			AnswerWord_2:  result.AnswerWord2,
-			DecodedResult: result.DecodeResult,
+			ResultWord:    result.ResultWord,
+			DecodedResult: result.DecodedResult,
 		}); err != nil {
 			return err
 		}
 	}
 	return nil
-}
-
-func okResponse() *mkoapiv1.StandardResponse {
-	return &mkoapiv1.StandardResponse{
-		Success: true,
-	}
-}
-
-func failResponse(err error) *mkoapiv1.StandardResponse {
-	return &mkoapiv1.StandardResponse{
-		Success:      false,
-		ErrorMessage: err.Error(),
-	}
 }
