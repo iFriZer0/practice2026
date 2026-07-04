@@ -5,7 +5,7 @@ readonly DIRECTORY_PKU_DRIVER_CPP="../driver/grpc_pku_driver_cpp"
 readonly DIRECTORY_PKU_DRIVER_PYTHON="../service"
 
 readonly API_SERVICE="service.proto"
-readonly API_PKU_DRIVER="pku_driver_test.proto"
+readonly API_PKU_DRIVER="pku_driver.proto"
 
 generate_grpc_cpp() {
 	mkdir -p "$1"

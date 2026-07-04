@@ -14,8 +14,8 @@ set(GRPC_PKU_DRIVER_DIRECTORY ${CMAKE_SOURCE_DIR}/driver/grpc_pku_driver_cpp)
 add_executable(
     driver
     ${DRIVER_SOURCES}
-    ${GRPC_PKU_DRIVER_DIRECTORY}/pku_driver_test.pb.cc
-    ${GRPC_PKU_DRIVER_DIRECTORY}/pku_driver_test.grpc.pb.cc
+    ${GRPC_PKU_DRIVER_DIRECTORY}/pku_driver.pb.cc
+    ${GRPC_PKU_DRIVER_DIRECTORY}/pku_driver.grpc.pb.cc
 )
 
 target_include_directories(
