@@ -1,7 +1,8 @@
 import sys
 import grpc
-import pku_driver_test_pb2
-import pku_driver_test_pb2_grpc
+import google.protobuf.empty_pb2
+import pku_driver_pb2
+import pku_driver_pb2_grpc
 
 IP: str = "localhost"
 PORT: str = ":50051"
@@ -9,9 +10,8 @@ PORT: str = ":50051"
 
 def main() -> int:
     with grpc.insecure_channel(IP + PORT) as channel:
-        stub: pku_driver_test_pb2_grpc.PkuDriverStub = pku_driver_test_pb2_grpc.PkuDriverStub(channel)
-        numbers_sum: pku_driver_test_pb2.AddResponse = stub.Add(pku_driver_test_pb2.AddRequest(number_1=1, number_2=2))
-        print(f"Сумма: {numbers_sum.sum:d}")
+        stub: pku_driver_pb2_grpc.PkuDriverStub = pku_driver_pb2_grpc.PkuDriverStub(channel)
+        print(f"Версия: {stub.GetVersion(google.protobuf.empty_pb2.Empty()).version:s}.")
     return 0
 
 
