@@ -9,7 +9,7 @@ find_package(Protobuf CONFIG REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
 
 file(GLOB_RECURSE DRIVER_SOURCES CONFIGURE_DEPENDS "driver/*.cpp")
-set(GRPC_PKU_DRIVER_DIRECTORY ${CMAKE_SOURCE_DIR}/grpc_pku_driver_cpp)
+set(GRPC_PKU_DRIVER_DIRECTORY ${CMAKE_SOURCE_DIR}/driver/grpc_pku_driver_cpp)
 
 add_executable(
     driver

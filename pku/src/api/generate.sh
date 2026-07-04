@@ -1,7 +1,7 @@
 #!/bin/bash
 
 readonly DIRECTORY_SERVICE_CPP="../grpc_service_cpp"
-readonly DIRECTORY_PKU_DRIVER_CPP="../grpc_pku_driver_cpp"
+readonly DIRECTORY_PKU_DRIVER_CPP="../driver/grpc_pku_driver_cpp"
 readonly DIRECTORY_PKU_DRIVER_PYTHON="../service"
 
 readonly API_SERVICE="service.proto"
