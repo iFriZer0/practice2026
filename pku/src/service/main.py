@@ -7,7 +7,7 @@ PORT: str = "50051"
 
 def main() -> int:
     with connecting_driver_caller.ConnectingDriverCaller(IP, PORT) as caller:
-        print(f"Версия: {caller.get_version():s}.")
+        print(f"Версия: {caller.get_version().version:s}.")
     return 0
 
 
