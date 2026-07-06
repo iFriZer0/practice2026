@@ -14,7 +14,7 @@ generate_grpc_cpp() {
 
 generate_grpc_python() {
 	mkdir -p "$1"
-        python -m grpc_tools.protoc -I. --python_out="$1" --pyi_out="$1" --grpc_python_out="$1" --mypy_out="$1" "$2"
+        python -m grpc_tools.protoc -I. --python_out="$1" --pyi_out="$1" --grpc_python_out="$1" "$2"
 	touch "$1/__init__.py"
 }
 

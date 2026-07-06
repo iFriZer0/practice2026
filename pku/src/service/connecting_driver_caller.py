@@ -1,11 +1,14 @@
 import collections
 import typing
+import logging
 import grpc
 import google.protobuf.empty_pb2
 import driver_caller
 import pku_driver_pb2
 import pku_driver_pb2_grpc
+import decorate_with_logger
 import connecting_driver_caller_ping_error
+import connecting_driver_caller_connection_error
 
 
 class ResponseProtocol(typing.Protocol):
@@ -17,6 +20,7 @@ Parameters = typing.ParamSpec("Parameters")
 Response = typing.TypeVar("Response", bound=ResponseProtocol)
 
 
+@decorate_with_logger.decorate_with_logger
 class ConnectingDriverCaller(driver_caller.DriverCaller):
     ip: str
     port: str
@@ -25,6 +29,8 @@ class ConnectingDriverCaller(driver_caller.DriverCaller):
     connected: bool
 
     TIMEOUT: int = 3
+
+    logger: logging.Logger
 
     def __init__(self, ip: str, port: str) -> None:
         self.ip = ip
@@ -36,11 +42,13 @@ class ConnectingDriverCaller(driver_caller.DriverCaller):
         self.__ping()
         self.stub = pku_driver_pb2_grpc.PkuDriverStub(self.channel)
         self.connected = True
+        self.logger.info("Connection was established.")
         return self
 
     def __exit__(self, exc_type: typing.Any, exc_val: typing.Any, exc_tb: typing.Any) -> None:
         self.channel.close()
         self.connected = False
+        self.logger.info("Connection was broken.")
 
     @staticmethod
     def __decorate_call_with_connection_check(
@@ -55,7 +63,14 @@ class ConnectingDriverCaller(driver_caller.DriverCaller):
             def output_function(self: "ConnectingDriverCaller", *args: Parameters.args, **kwargs: Parameters.kwargs) -> Response:
                 response: Response = response_type()
                 if self.connected:
-                    response = input_function(self, *args, **kwargs)
+                    try:
+                        response = input_function(self, *args, **kwargs)
+                    except grpc.RpcError as exception:
+                        self.connected = False
+                        self.logger.error("Connection was lost before the call.")
+                        raise connecting_driver_caller_connection_error.ConnectingDriverCallerConnectionError(
+                            "Connection is lost.", connecting_driver_caller_connection_error.ConnectingDriverCallerConnectionError
+                        ) from exception
                 else:
                     response.success = False
                     response.error_message = "ConnectingDriverCaller is not connected."
@@ -103,6 +118,7 @@ class ConnectingDriverCaller(driver_caller.DriverCaller):
         try:
             grpc.channel_ready_future(self.channel).result(timeout=self.TIMEOUT)
         except grpc.FutureTimeoutError as exception:
+            self.logger.error("Connection was not established.")
             raise connecting_driver_caller_ping_error.ConnectingDriverCallerPingError(
                 "Connection was not established.", connecting_driver_caller_ping_error.ConnectingDriverCallerPingError
             ) from exception
