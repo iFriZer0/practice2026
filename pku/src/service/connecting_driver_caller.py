@@ -6,6 +6,7 @@ import driver_caller
 import pku_driver_pb2
 import pku_driver_pb2_grpc
 import connecting_driver_caller_ping_error
+import connecting_driver_caller_connection_error
 
 
 class ResponseProtocol(typing.Protocol):
@@ -53,13 +54,19 @@ class ConnectingDriverCaller(driver_caller.DriverCaller):
             input_function: collections.abc.Callable[typing.Concatenate["ConnectingDriverCaller", Parameters], Response]
         ) -> collections.abc.Callable[typing.Concatenate["ConnectingDriverCaller", Parameters], Response]:
             def output_function(self: "ConnectingDriverCaller", *args: Parameters.args, **kwargs: Parameters.kwargs) -> Response:
-                response: Response = response_type()
-                if self.connected:
-                    response = input_function(self, *args, **kwargs)
-                else:
-                    response.success = False
-                    response.error_message = "ConnectingDriverCaller is not connected."
-                return response
+                try:
+                    response: Response = response_type()
+                    if self.connected:
+                        response = input_function(self, *args, **kwargs)
+                    else:
+                        response.success = False
+                        response.error_message = "ConnectingDriverCaller is not connected."
+                    return response
+                except grpc.RpcError as exception:
+                    self.connected = False
+                    raise connecting_driver_caller_connection_error.ConnectingDriverCallerConnectionError(
+                        "Connection is lost.", connecting_driver_caller_connection_error.ConnectingDriverCallerConnectionError
+                    ) from exception
             return output_function
         return call_with_connection_check
 
