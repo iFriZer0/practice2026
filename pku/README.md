@@ -54,10 +54,10 @@ cmake --build build
 
 ### Windows
 
-Для очистки достаточно удалить директорию ```build```.
+Для очистки достаточно удалить директории ```build``` и ```log```.
 
 ```bat
-rmdir build
+rmdir build log
 ```
 
 ## Запуск
