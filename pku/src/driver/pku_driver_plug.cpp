@@ -178,7 +178,7 @@ std::string PkuDriverPlug::convert_address(const std::string &address) const
 {
     std::string result;
     result.reserve(ADDRESS_SIZE);
-    std::ranges::transform(address | std::views::split(':'), std::back_inserter(result), [](auto &&byte)
+    std::ranges::transform(address | std::views::split('.'), std::back_inserter(result), [](auto &&byte)
     {
         std::string_view byte_view(&*byte.begin(), std::ranges::distance(byte));
         unsigned char value;
