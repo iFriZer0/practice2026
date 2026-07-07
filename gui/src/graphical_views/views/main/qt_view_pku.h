@@ -3,6 +3,7 @@
 #define QT_VIEW_PKU_H__
 
 #include <QStackedWidget>
+#include <QStandardItemModel>
 #include <QWidget>
 #include <QVBoxLayout>
 #include <QLabel>
@@ -34,6 +35,7 @@ private:
     QComboBox *create_combo_box(QWidget *const parent) const;
     QTextEdit *create_text_edit(QWidget *const parent) const;
     QPushButton *create_button(const QString &text, QWidget *const parent) const;
+    QComboBox *create_multi_select_combo_box(QWidget *const parent, int count) const;
 
     QWidget *central_widget;
     QStackedWidget *stacked_widget;

@@ -1,3 +1,4 @@
+
 #include <QComboBox>
 #include <QTextEdit>
 #include <iostream>
@@ -19,54 +20,89 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget) noexcept
     central_widget = create_widget();
     QVBoxLayout *main_layout = create_v_box_layout(central_widget);
 
-    // Верхние текстовые метки (без двоеточий)
     main_layout->addWidget(create_label("Пульт контроля и управления (РК/ПКУ)"));
-    main_layout->addWidget(create_label("Выдача РК"));
-    main_layout->addWidget(create_label("Настройка срабатывания ПКУ (1-64)"));
-    main_layout->addWidget(create_label("Измеренная длительность импульсов ПКУ"));
 
-    // Одно большое текстовое поле вывода (куда пишется вся информация)
-    QTextEdit *pku_log = create_text_edit(central_widget);
-    pku_log->setReadOnly(true);
-    main_layout->addWidget(pku_log);
+    // --- СЕКЦИЯ: СТАТУС И СВЯЗЬ ---
+    main_layout->addWidget(create_label("<b>Статус и связь</b>"));
 
-    // Строка системного статуса
-    main_layout->addWidget(create_label("Статус ПКУ: устройство готово к работе"));
-
-    // === БЛОК: СТАТУС И СВЯЗЬ ===
-    main_layout->addWidget(create_label("Статус и связь"));
+    // 1. Строка с кнопками для Статуса и Связи
+    QHBoxLayout *status_buttons_layout = create_h_box_layout();
 
     QPushButton *btn_check_conn = create_button("Проверить соединение", central_widget);
-    main_layout->addWidget(btn_check_conn);
+    btn_check_conn->setFixedWidth(200); // Задали одинаковую ширину для всех трех кнопок
+    status_buttons_layout->addWidget(btn_check_conn);
 
     QPushButton *btn_get_status = create_button("Статус оборудования", central_widget);
-    main_layout->addWidget(btn_get_status);
+    btn_get_status->setFixedWidth(200);
+    status_buttons_layout->addWidget(btn_get_status);
 
     QPushButton *btn_get_version = create_button("Проверить версию", central_widget);
-    main_layout->addWidget(btn_get_version);
+    btn_get_version->setFixedWidth(200);
+    status_buttons_layout->addWidget(btn_get_version);
 
-    // === БЛОК: ОСНОВНАЯ ИНФОРМАЦИЯ ===
-    main_layout->addWidget(create_label("Основная информация"));
+    status_buttons_layout->addStretch(); // Сдвигаем всё влево
+    main_layout->addLayout(status_buttons_layout);
+
+    // 2. Строка со статусами (строго ПОД кнопками)
+    QHBoxLayout *status_labels_layout = create_h_box_layout();
+
+    QLabel *lbl_connect_status = create_label("Статус: не проверено");
+    lbl_connect_status->setFixedWidth(200); // Ограничили ширину, чтобы статус стоял точно под своей кнопкой
+    status_labels_layout->addWidget(lbl_connect_status);
+
+    QLabel *lbl_equipment_status = create_label("Статус: нет данных");
+    lbl_equipment_status->setFixedWidth(200);
+    status_labels_layout->addWidget(lbl_equipment_status);
+
+    QLabel *lbl_version_status = create_label("Версия: --");
+    lbl_version_status->setFixedWidth(200);
+    status_labels_layout->addWidget(lbl_version_status);
+
+    status_labels_layout->addStretch();
+    main_layout->addLayout(status_labels_layout);
+
+    main_layout->addSpacing(15);
+
+    // --- СЕКЦИЯ: ОСНОВНАЯ ИНФОРМАЦИЯ ---
+    main_layout->addWidget(create_label("<b>Основная информация</b>"));
+
+    // 3. Строка с кнопками для Основной Информации
+    QHBoxLayout *main_info_buttons_layout = create_h_box_layout();
 
     QPushButton *btn_read_main = create_button("Читать основную информацию", central_widget);
-    main_layout->addWidget(btn_read_main);
+    btn_read_main->setFixedWidth(250); // Задали одинаковую ширину для двух кнопок
+    main_info_buttons_layout->addWidget(btn_read_main);
 
     QPushButton *btn_write_main = create_button("Записать основную информацию", central_widget);
-    main_layout->addWidget(btn_write_main);
+    btn_write_main->setFixedWidth(250);
+    main_info_buttons_layout->addWidget(btn_write_main);
 
-    // === БЛОК: ПАРАМЕТРЫ ПКУ ===
-    main_layout->addWidget(create_label("Параметры ПКУ"));
+    main_info_buttons_layout->addStretch();
+    main_layout->addLayout(main_info_buttons_layout);
 
-    // Нижняя комбинированная строка с настройками и кнопками
-    QHBoxLayout *params_layout = create_h_box_layout();
+    // 4. Строка со статусами (строго ПОД кнопками основной информации)
+    QHBoxLayout *main_info_labels_layout = create_h_box_layout();
 
+    QLabel *lbl_read_main_status = create_label("Данные не прочитаны");
+    lbl_read_main_status->setFixedWidth(250); // Текст встанет ровно под своей кнопкой
+    main_info_labels_layout->addWidget(lbl_read_main_status);
+
+    QLabel *lbl_write_main_status = create_label("Изменения не записаны");
+    lbl_write_main_status->setFixedWidth(250);
+    main_info_labels_layout->addWidget(lbl_write_main_status);
+
+    main_info_labels_layout->addStretch();
+    main_layout->addLayout(main_info_labels_layout);
+
+    main_layout->addSpacing(15);
+    main_layout->addSpacing(15);
+
+    // --- СЕКЦИЯ ПОДГОТОВКИ ЭЛЕМЕНТОВ ДЛЯ НИЖНИХ БЛОКОВ ---
     QLabel *rk_num_label = create_label("Номер РК");
     QLineEdit *rk_num_input = create_line_edit(central_widget);
-    rk_num_input->setMaximumWidth(60);
 
     QLabel *rk_time_label = create_label("Длительность (мс)");
     QLineEdit *rk_time_input = create_line_edit(central_widget);
-    rk_time_input->setMaximumWidth(80);
 
     QPushButton *btn_send_rk = create_button("Выдать РК", central_widget);
 
@@ -78,47 +114,94 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget) noexcept
 
     QLabel *mode_label = create_label("Режим");
     QComboBox *mode_select = create_combo_box(central_widget);
-    mode_select->addItem("0 — Отрицательный импульс");
-    mode_select->addItem("1 — Положительный импульс");
-    mode_select->addItem("2 — Фронт");
+    mode_select->addItem("0 - Отрицательный импульс");
+    mode_select->addItem("1 - Положительный импульс");
+    mode_select->addItem("2 - Фронт");
 
     QPushButton *btn_set_mode = create_button("Применить режим", central_widget);
 
-    params_layout->addWidget(rk_num_label);
-    params_layout->addWidget(rk_num_input);
-    params_layout->addWidget(rk_time_label);
-    params_layout->addWidget(rk_time_input);
-    params_layout->addWidget(btn_send_rk);
-    params_layout->addWidget(chan_label);
-    params_layout->addWidget(chan_select);
-    params_layout->addWidget(mode_label);
-    params_layout->addWidget(mode_select);
-    params_layout->addWidget(btn_set_mode);
-    main_layout->addLayout(params_layout);
+    // === БЛОК КОМАНДЫ 1: ВЫДАЧА РК ===
+    main_layout->addWidget(create_label("<b>Выдача РК</b>"));
 
-    // Самая нижняя кнопка
+    QHBoxLayout *rk_fields_layout = create_h_box_layout();
+    rk_fields_layout->addWidget(rk_num_label);
+    rk_num_input->setMaximumWidth(60);
+    rk_fields_layout->addWidget(rk_num_input);
+
+    rk_fields_layout->addWidget(rk_time_label);
+    rk_time_input->setMaximumWidth(80);
+    rk_fields_layout->addWidget(rk_time_input);
+
+    btn_send_rk->setMaximumWidth(150);
+    rk_fields_layout->addWidget(btn_send_rk);
+    rk_fields_layout->addStretch();
+    main_layout->addLayout(rk_fields_layout);
+
+    QLabel *lbl_send_rk_status = create_label("Команда выдачи РК не отправлялась");
+    main_layout->addWidget(lbl_send_rk_status);
+
+    main_layout->addSpacing(15);
+    // === БЛОК КОМАНДЫ 2: ПАРАМЕТРЫ ПКУ ===
+    main_layout->addWidget(create_label("<b>Измеренная длительность импульсов ПКУ</b>"));
+
+    QHBoxLayout *pku_fields_layout = create_h_box_layout();
+    pku_fields_layout->addWidget(chan_label);
+    chan_select->setMaximumWidth(120);
+    pku_fields_layout->addWidget(chan_select);
+
+    pku_fields_layout->addWidget(mode_label);
+    mode_select->setMaximumWidth(220);
+    pku_fields_layout->addWidget(mode_select);
+
+    btn_set_mode->setMaximumWidth(150);
+    pku_fields_layout->addWidget(btn_set_mode);
+    pku_fields_layout->addStretch();
+    main_layout->addLayout(pku_fields_layout);
+
+    QLabel *lbl_set_mode_status = create_label("Режим не применялся");
+    main_layout->addWidget(lbl_set_mode_status);
+
+    main_layout->addSpacing(15);
+
+    // === БЛОК КОМАНДЫ 3: ЧТЕНИЕ ДЛИТЕЛЬНОСТЕЙ ПКУ ===
+
+    // === БЛОК КОМАНДЫ 3: ЧТЕНИЕ ДЛИТЕЛЬНОСТЕЙ ПКУ ===
+    main_layout->addWidget(create_label("<b>Чтение длительностей ПКУ</b>"));
+
+    QHBoxLayout *read_pku_layout = create_h_box_layout();
+
+    QLabel *lbl_multi_pku = create_label("Выбор номеров ПКУ:");
+    read_pku_layout->addWidget(lbl_multi_pku);
+
+    QComboBox *multi_pku_select = create_multi_select_combo_box(central_widget, 64);
+    multi_pku_select->setFixedWidth(250);
+    read_pku_layout->addWidget(multi_pku_select);
+
+    // Добавили QPushButton* перед переменной
     QPushButton *btn_read_pku = create_button("Читать длительности ПКУ", central_widget);
-    main_layout->addWidget(btn_read_pku);
+    btn_read_pku->setFixedWidth(220);
+    read_pku_layout->addWidget(btn_read_pku);
+
+    read_pku_layout->addStretch();
+    main_layout->addLayout(read_pku_layout);
+
+    QLabel *lbl_read_pku_status = create_label("Длительности ПКУ не считывались");
+    main_layout->addWidget(lbl_read_pku_status);
+
+    // Добавили QTextEdit* перед переменной
+    QTextEdit *pku_log = create_text_edit(central_widget);
+    pku_log->setReadOnly(true);
+    pku_log->setMinimumHeight(180);
+    main_layout->addWidget(pku_log);
 
     central_widget->setLayout(main_layout);
-}
+} // <--- ЭТА СКОБКА ТЕПЕРЬ НА МЕСТЕ, ОНА ЗАКРЫВАЕТ КОНСТРУКТОР КЛАССА
 
 void QtViewPKU::show() {
     if (stacked_widget->indexOf(central_widget) == NOT_FOUND) {
         stacked_widget->addWidget(central_widget);
     }
     stacked_widget->setCurrentWidget(central_widget);
-}
-
-// =========================================================================
-// БЕЗОПАСНЫЕ ФУНКЦИИ ВЫДЕЛЕНИЯ ПАМЯТИ
-// =========================================================================
-
-QWidget *QtViewPKU::create_widget() const {
-    QWidget *widget{nullptr};
-    try { widget = new QWidget{}; }
-    catch (const std::bad_alloc &) { std::cerr << "Не удалось создать QWidget." << std::endl; }
-    return widget;
 }
 
 QVBoxLayout *QtViewPKU::create_v_box_layout(QWidget *const parent) const {
@@ -156,6 +239,27 @@ QComboBox *QtViewPKU::create_combo_box(QWidget *const parent) const {
     return combo_box;
 }
 
+QComboBox *QtViewPKU::create_multi_select_combo_box(QWidget *const parent, int count) const {
+    QComboBox *combo_box{nullptr};
+    try {
+        combo_box = new QComboBox{parent};
+        // Если компилятор ругнётся на QStandardItemModel, вашему другу нужно будет добавить
+        // строку #include <QStandardItemModel> в самый верх этого файла или в qt_view_pku.h
+        QStandardItemModel *model = new QStandardItemModel(count, 1, combo_box);
+        for (int i = 0; i < count; ++i) {
+            QStandardItem *item = new QStandardItem(QString("ПКУ %1").arg(i + 1));
+            item->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
+            item->setData(Qt::Unchecked, Qt::CheckStateRole);
+            model->setItem(i, 0, item);
+        }
+        combo_box->setModel(model);
+    }
+    catch (const std::bad_alloc &) {
+        std::cerr << "Не удалось создать множественный QComboBox." << std::endl;
+    }
+    return combo_box;
+}
+
 QTextEdit *QtViewPKU::create_text_edit(QWidget *const parent) const {
     QTextEdit *text_edit{nullptr};
     try { text_edit = new QTextEdit{parent}; }
@@ -168,4 +272,11 @@ QPushButton *QtViewPKU::create_button(const QString &text, QWidget *const parent
     try { button = new QPushButton{text, parent}; }
     catch (const std::bad_alloc &) { std::cerr << "Не удалось создать QPushButton." << std::endl; }
     return button;
+}
+
+QWidget *QtViewPKU::create_widget() const {
+    QWidget *widget{nullptr};
+    try { widget = new QWidget{}; }
+    catch (const std::bad_alloc &) { std::cerr << "Не удалось создать QWidget." << std::endl; }
+    return widget;
 }
