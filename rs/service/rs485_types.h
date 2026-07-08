@@ -7,16 +7,21 @@
 
 struct SendDataResult
 {
-    bool success;
-    uint32_t channel_id;
+    bool success{false};
+    uint32_t channel_id{0};
     std::string error_message;
+};
+
+struct ReceiveDataPacket
+{
+    std::vector<uint8_t> bytes;
 };
 
 struct ReceiveDataResult
 {
-    bool success;
-    uint32_t channel_id;
-    std::vector<uint8_t> data;
+    bool success{false};
+    uint32_t channel_id{0};
+    std::vector<ReceiveDataPacket> packets;
     std::string error_message;
 };
 
