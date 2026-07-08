@@ -41,8 +41,6 @@ public:
     void stopSubscribe();
 
 private:
-    bool connected_{false};
-
     std::string endpoint_;
 
     std::shared_ptr<grpc::Channel> channel_;
