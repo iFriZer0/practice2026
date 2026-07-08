@@ -1,0 +1,9 @@
+# qmake / Qt build artifacts
+gui/src/.qmake.stash
+gui/src/Makefile
+gui/src/build/
+gui/src/*.pro.user
+gui/src/*.pro.user.*
+
+# macOS
+.DS_Store

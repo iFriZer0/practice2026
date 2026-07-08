@@ -2,19 +2,33 @@ QT       += core gui widgets
 
 CONFIG += c++20
 
-QMAKE_CXXFLAGS += -Wall -Werror -Wpedantic -Wextra -Wfloat-conversion -Wfloat-equal
+QMAKE_CXXFLAGS += -Wall -Werror -Wpedantic -Wextra -Wfloat-conversion -Wfloat-equal -Wno-nullability-extension -Wno-deprecated-declarations -Wno-gcc-compat -Wno-gnu-anonymous-struct -Wno-nested-anon-types
 
 INCLUDEPATH += \
+    /opt/homebrew/include \
+    /usr/local/include \
     graphical_views/ \
     graphical_views/widgets \
     graphical_views/views \
     graphical_views/views/main \
+    clients/mko \
+    generated/mko \
     factory \
     factory/errors \
     errors \
     application \
     application/factory \
     application/factory/errors
+
+LIBS += \
+    -L/opt/homebrew/lib \
+    -L/usr/local/lib \
+    -lgrpc++ \
+    -lgrpc \
+    -lprotobuf \
+    -lgpr
+
+LIBS += $$system(find /opt/homebrew/lib -maxdepth 1 -name 'libabsl_*.dylib' ! -name '*.2601.*' -print)
 
 SOURCES += \
     application/application.cpp \
@@ -25,6 +39,7 @@ SOURCES += \
     application/factory/errors/view_director_error.cpp \
     application/factory/qt_main_view_builder.cpp \
     application/factory/view_director.cpp \
+    clients/mko/grpc_mko_client.cpp \
     errors/error.cpp \
     factory/errors/creator_error.cpp \
     factory/errors/creator_maker_error.cpp \
@@ -39,6 +54,8 @@ SOURCES += \
     graphical_views/views/main/qt_view_pku.cpp \
     graphical_views/views/main/qt_view_rs_485.cpp \
     graphical_views/widgets/main_window.cpp \
+    generated/mko/mko.grpc.pb.cc \
+    generated/mko/mko.pb.cc \
     main.cpp
 
 HEADERS += \
@@ -51,6 +68,8 @@ HEADERS += \
     application/factory/qt_main_view_builder.h \
     application/factory/view_builder.h \
     application/factory/view_director.h \
+    clients/mko/grpc_mko_client.h \
+    clients/mko/mko_client.h \
     errors/error.h \
     factory/creator.h \
     factory/creator_maker.h \
@@ -75,7 +94,9 @@ HEADERS += \
     graphical_views/views/main/qt_view_pku.h \
     graphical_views/views/main/qt_view_rs_485.h \
     graphical_views/views/main/view.h \
-    graphical_views/widgets/main_window.h
+    graphical_views/widgets/main_window.h \
+    generated/mko/mko.grpc.pb.h \
+    generated/mko/mko.pb.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
