@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package api;
+
+message ConnectRequest {// Запрос и ответ для подключения
+  string port_name = 1;
+}
+
+message ConnectResponse {
+  bool connected = 1;
+  string status_message = 2;
+}
+
+message StatusRequest {//для чтения
+  int32 device_id = 1;
+}
+
+message StatusResponse {
+  string device_state = 1;
+  float value = 2;
+  bool error_flag = 3;
+}
+
+message CommandRequest {// для отправки команд
+  int32 command_id = 1;
+  string command_param = 2;
+}
+
+message CommandResponse {
+  bool success = 1;
+  string result_text = 2;
+}
+
+service MainService {
+  rpc ConnectDevice (ConnectRequest) returns (ConnectResponse);
+  rpc GetDeviceStatus (StatusRequest) returns (StatusResponse);
+  rpc SendCommand (CommandRequest) returns (CommandResponse);
+}
