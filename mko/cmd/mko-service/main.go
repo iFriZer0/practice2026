@@ -9,11 +9,13 @@ import (
 	"syscall"
 
 	mkoapiv1 "mko/api/gen"
+	"mko/internal/logging"
 	"mko/internal/service"
 	"mko/internal/transport"
 	mkodriver "mko/internal/transport/clients/mko-driver-service"
 	mkodriverv1 "mko/internal/transport/clients/mko-driver-service/gen/mkodriverv1"
 
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -27,9 +29,17 @@ func main() {
 	serviceAddr := envOrDefault("MKO_SERVICE_ADDR", defaultServiceAddr)
 	driverAddr := envOrDefault("MKO_DRIVER_ADDR", defaultDriverAddr)
 
+	logger, err := logging.NewZapLogger()
+	if err != nil {
+		log.Fatalf("failed to create logger: %v", err)
+	}
+	defer func() {
+		_ = logger.Sync()
+	}()
+
 	driverConn, err := grpc.NewClient(driverAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("failed to create mko-driver client: %v", err)
+		logger.Fatal("failed to create mko-driver client", zap.Error(err), zap.String("driver_addr", driverAddr))
 	}
 	defer driverConn.Close()
 
@@ -37,26 +47,26 @@ func main() {
 	kkDriver := transport.NewMKODriverClient(driverGrpcClient)
 	ouDriver := mkodriver.New(driverGrpcClient)
 
-	kkService := service.NewKKService(kkDriver)
+	kkService := logging.NewKKService(service.NewKKService(kkDriver), logger)
 	ouService := service.NewOuService(ouDriver, slog.Default())
 	mkoServer := transport.NewMKOServer(ouService, kkService)
 
 	listener, err := net.Listen("tcp", serviceAddr)
 	if err != nil {
-		log.Fatalf("failed to listen on %s: %v", serviceAddr, err)
+		logger.Fatal("failed to listen mko-service", zap.Error(err), zap.String("service_addr", serviceAddr))
 	}
 
 	grpcServer := grpc.NewServer()
 	mkoapiv1.RegisterMkoWorkstationServiceServer(grpcServer, mkoServer)
 
 	go func() {
-		log.Printf("mko-service listening on %s, driver=%s", serviceAddr, driverAddr)
+		logger.Info("mko-service started", zap.String("service_addr", serviceAddr), zap.String("driver_addr", driverAddr))
 		if err := grpcServer.Serve(listener); err != nil {
-			log.Fatalf("failed to serve mko-service: %v", err)
+			logger.Fatal("failed to serve mko-service", zap.Error(err))
 		}
 	}()
 
-	waitForShutdown(grpcServer)
+	waitForShutdown(grpcServer, logger)
 }
 
 func envOrDefault(key, fallback string) string {
@@ -67,11 +77,11 @@ func envOrDefault(key, fallback string) string {
 	return value
 }
 
-func waitForShutdown(server *grpc.Server) {
+func waitForShutdown(server *grpc.Server, logger *zap.Logger) {
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
-	<-stop
+	sig := <-stop
 
-	log.Print("stopping mko-service")
+	logger.Info("stopping mko-service", zap.String("signal", sig.String()))
 	server.GracefulStop()
 }
