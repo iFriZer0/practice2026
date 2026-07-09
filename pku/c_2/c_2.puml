@@ -1,0 +1,46 @@
+@startuml c_2
+
+!include <C4/C4_Container>
+
+!theme plain
+
+UpdateElementStyle(Person, $borderColor="#000000", $fontColor="#000000", $bgColor="#ffffff")
+UpdateElementStyle(System, $borderColor="#000000", $fontColor="#000000", $bgColor="#ffffff")
+UpdateElementStyle(Container, $borderColor="#000000", $fontColor="#000000", $bgColor="#ffffff")
+
+
+Person(user, "Пользователь", "Взаимодействует с платами")
+
+System_Boundary(workplace, "Система взаимодействия с платами") {
+    Container(main, "Основная программа", "", "Точка входа в систему")
+    Container(rs485_service, "Микросервис для работы с RS-485", "", "Обращается к драйверу RS-485")
+    Container(mko_service, "Микросервис для работы с МКО", "", "Обращается к драйверу МКО")
+    Container(pku_service, "Микросервис для работы с РК/ПКУ", "", "Обращается к драйверу РК/ПКУ")
+    Container(rs485_driver, "Драйвер RS-485", "С++", "Обращается к плате RS-485")
+    Container(mko_driver, "Драйвер МКО", "С++", "Обращается к плате МКО")
+    Container(pku_driver, "Драйвер РК/ПКУ", "C++", "Обращается к плате РК/ПКУ")
+}
+
+System(rs485_board, "Плата RS-485", "Отвечает на запросы в формате RS-485")
+System(mko_board, "Плата МКО", "Отвечает на запросы в формате МКО")
+System(pku_board, "Плата РК/ПКУ", "Отвечает на запросы в формате РК/ПКУ")
+
+Rel(user, main, "Отправляет запросы в программу")
+
+Rel(main, rs485_service, "Отправляет запросы для RS-485")
+Rel(main, mko_service, "Отправляет запросы для МКО")
+Rel(main, pku_service, "Отправляет запросы для РК/ПКУ")
+
+Rel(rs485_service, rs485_driver, "Отправляет запросы")
+
+Rel(mko_service, mko_driver, "Отправляет запросы")
+
+Rel(pku_service, pku_driver, "Отправляет запросы")
+
+Rel(rs485_driver, rs485_board, "Отправляет запросы")
+
+Rel(mko_driver, mko_board, "Отправляет запросы")
+
+Rel(pku_driver, pku_board, "Отправляет запросы")
+
+@enduml
