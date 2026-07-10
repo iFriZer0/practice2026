@@ -4,6 +4,7 @@ gui/src/Makefile
 gui/src/build/
 gui/src/*.pro.user
 gui/src/*.pro.user.*
+gui/src/generated/
 
 # macOS
 .DS_Store

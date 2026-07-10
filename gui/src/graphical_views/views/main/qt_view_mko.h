@@ -20,6 +20,7 @@
 #include "view.h"
 
 class MkoClient;
+struct OuSubaddressData;
 
 class QtViewMKO : public View
 {
@@ -42,7 +43,10 @@ private:
     QWidget *central_widget;
     QStackedWidget *stacked_widget;
     QTextEdit *operation_log;
+    QSpinBox *kk_index_spin_box;
+    QSpinBox *ou_index_spin_box;
     std::shared_ptr<MkoClient> mko_client;
+    bool is_updating_mko_indices;
 
     QWidget *create_widget() const;
 
@@ -53,6 +57,8 @@ private:
     QWidget *create_kk_panel();
 
     QWidget *create_ou_panel();
+
+    QWidget *create_menu_panel();
 
     QWidget *create_log_panel();
 
@@ -69,6 +75,18 @@ private:
     void add_labeled_widget(QGridLayout *const layout, int row, const QString &label_text, QWidget *const widget) const;
 
     std::vector<uint32_t> collect_words(const QTableWidget *const table) const;
+
+    QString format_word(uint32_t word) const;
+
+    QString format_words(const std::vector<uint32_t> &words) const;
+
+    void append_ou_subaddress_data(const OuSubaddressData &data);
+
+    void sync_mko_indices(QSpinBox *const changed_spin_box);
+
+    static int alternate_mko_index(int index);
+
+    void reset_parameters_to_defaults();
 
     void append_log(const QString &message);
 };

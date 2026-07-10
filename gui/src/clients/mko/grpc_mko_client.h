@@ -21,6 +21,13 @@ public:
     void configure_kk(const ConfigureKKRequestData &request) override;
     void configure_exchange(const ConfigureExchangeRequestData &request) override;
     void run_exchange(const RunExchangeRequestData &request) override;
+    void configure_ou(const ConfigureOuRequestData &request) override;
+    void set_ou_response_word(const SetOuResponseWordRequestData &request) override;
+    OuSubaddressData read_ou_subaddress(const ReadOuSubaddressRequestData &request) override;
+    void write_ou_subaddress(const WriteOuSubaddressRequestData &request) override;
+    void send_raw_ou_data(const WriteOuSubaddressRequestData &request) override;
+    void clear_receive_buffer(const ClearBufferRequestData &request) override;
+    void clear_transmit_buffer(const ClearBufferRequestData &request) override;
 
 private:
     std::unique_ptr<mko::workstation::v1::MkoWorkstationService::Stub> stub;
