@@ -110,6 +110,22 @@ go run ./cmd/mko-service
 
 ## Запуск GUI
 
+Если `gui/src/generated/mko` отсутствует, сначала сгенерируй C++ gRPC stubs из workstation proto:
+
+```bash
+cd mko
+make proto-gui-cpp
+```
+
+Команда создает:
+
+```text
+gui/src/generated/mko/mko.pb.h
+gui/src/generated/mko/mko.pb.cc
+gui/src/generated/mko/mko.grpc.pb.h
+gui/src/generated/mko/mko.grpc.pb.cc
+```
+
 Из папки GUI:
 
 ```bash
@@ -243,6 +259,9 @@ go run ./cmd/mko-service
 
 ```bash
 # terminal 3
+cd mko
+make proto-gui-cpp
+
 cd gui/src
 ./build.sh
 ./build/out/ui.app/Contents/MacOS/ui

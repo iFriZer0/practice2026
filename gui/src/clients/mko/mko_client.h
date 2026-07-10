@@ -48,6 +48,55 @@ struct ExchangeResultData
     std::string decoded_result;
 };
 
+struct ConfigureOuRequestData
+{
+    std::string board_id;
+    int32_t index;
+    int32_t channel;
+    int32_t ou_address;
+    int32_t response_word;
+    std::string remote_ip;
+    int32_t remote_port;
+};
+
+struct SetOuResponseWordRequestData
+{
+    std::string board_id;
+    int32_t index;
+    int32_t channel;
+    int32_t ou_address;
+    int32_t response_word;
+};
+
+struct ReadOuSubaddressRequestData
+{
+    std::string board_id;
+    uint32_t subaddress;
+    bool receive_area;
+};
+
+struct OuSubaddressData
+{
+    uint32_t subaddress;
+    std::vector<uint32_t> sd;
+    uint32_t cmd_word;
+    uint32_t result_word;
+    std::string decoded_result;
+};
+
+struct WriteOuSubaddressRequestData
+{
+    std::string board_id;
+    uint32_t subaddress;
+    std::vector<uint32_t> sd;
+};
+
+struct ClearBufferRequestData
+{
+    std::string board_id;
+    int32_t index;
+};
+
 class MkoClient
 {
 public:
@@ -56,6 +105,13 @@ public:
     virtual void configure_kk(const ConfigureKKRequestData &request) = 0;
     virtual void configure_exchange(const ConfigureExchangeRequestData &request) = 0;
     virtual void run_exchange(const RunExchangeRequestData &request) = 0;
+    virtual void configure_ou(const ConfigureOuRequestData &request) = 0;
+    virtual void set_ou_response_word(const SetOuResponseWordRequestData &request) = 0;
+    virtual OuSubaddressData read_ou_subaddress(const ReadOuSubaddressRequestData &request) = 0;
+    virtual void write_ou_subaddress(const WriteOuSubaddressRequestData &request) = 0;
+    virtual void send_raw_ou_data(const WriteOuSubaddressRequestData &request) = 0;
+    virtual void clear_receive_buffer(const ClearBufferRequestData &request) = 0;
+    virtual void clear_transmit_buffer(const ClearBufferRequestData &request) = 0;
 };
 
 #endif
