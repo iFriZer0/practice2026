@@ -1,201 +1,596 @@
+#include "qt_view_rs_485.h"
+
+#include <exception>
 #include <iostream>
 #include <new>
 
-#include <QStackedWidget>
-#include <QWidget>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
 #include <QGroupBox>
-#include <QLabel>
-#include <QString>
-#include <QLineEdit>
-#include <QPushButton>
-#include <QTextEdit>
-#include <QSpinBox>
+#include <QHBoxLayout>
+#include <QMetaObject>
 
-#include "qt_view_rs_485.h"
-
-QtViewRS485::QtViewRS485(QStackedWidget *const stacked_widget) noexcept
+QtViewRS485::QtViewRS485(
+    QStackedWidget *const stacked_widget
+)
     : stacked_widget{stacked_widget},
-      subscribed{false}
+      rs485_service_{
+          std::make_shared<Rs485Service>()
+      }
 {
     central_widget = create_widget();
     setup_ui();
 }
 
+QtViewRS485::~QtViewRS485()
+{
+    if (rs485_service_)
+    {
+        rs485_service_->stopSubscribe();
+    }
+}
+
 void QtViewRS485::show()
 {
-    if (stacked_widget->indexOf(central_widget) == NOT_FOUND)
+    if (stacked_widget->indexOf(
+            central_widget
+        ) == NOT_FOUND)
     {
-        stacked_widget->addWidget(central_widget);
+        stacked_widget->addWidget(
+            central_widget
+        );
     }
 
-    stacked_widget->setCurrentWidget(central_widget);
+    stacked_widget->setCurrentWidget(
+        central_widget
+    );
 }
 
 void QtViewRS485::setup_ui()
 {
-    QVBoxLayout *main_layout = create_v_box_layout(central_widget);
+    QVBoxLayout *main_layout =
+        create_v_box_layout(central_widget);
 
-    main_layout->addWidget(create_label("RS-485"));
+    main_layout->addWidget(
+        create_label("RS-485")
+    );
 
-    QGroupBox *connection_group = new QGroupBox("Подключение к RS-485 драйверу", central_widget);
-    QHBoxLayout *connection_layout = new QHBoxLayout(connection_group);
+    /*
+     * Подключение
+     */
+    QGroupBox *connection_group =
+        new QGroupBox(
+            "Подключение к RS-485 драйверу",
+            central_widget
+        );
 
-    connection_layout->addWidget(create_label("gRPC endpoint:"));
+    QHBoxLayout *connection_layout =
+        new QHBoxLayout(connection_group);
 
-    driver_endpoint_input = new QLineEdit(connection_group);
-    driver_endpoint_input->setText("127.0.0.1:50051");
-    connection_layout->addWidget(driver_endpoint_input);
+    connection_layout->addWidget(
+        create_label("gRPC endpoint:")
+    );
 
-    connection_group->setLayout(connection_layout);
-    main_layout->addWidget(connection_group);
+    driver_endpoint_input =
+        new QLineEdit(connection_group);
 
-    QGroupBox *send_group = new QGroupBox("Отправка данных SendData", central_widget);
-    QVBoxLayout *send_layout = new QVBoxLayout(send_group);
+    driver_endpoint_input->setText(
+        "127.0.0.1:50051"
+    );
 
-    QHBoxLayout *send_settings_layout = new QHBoxLayout();
+    connection_layout->addWidget(
+        driver_endpoint_input
+    );
 
-    send_settings_layout->addWidget(create_label("Канал UART:"));
+    connect_button =
+        new QPushButton(
+            "Подключиться",
+            connection_group
+        );
 
-    channel_input = new QSpinBox(send_group);
+    connection_layout->addWidget(
+        connect_button
+    );
+
+    main_layout->addWidget(
+        connection_group
+    );
+
+    /*
+     * SendData
+     */
+    QGroupBox *send_group =
+        new QGroupBox(
+            "Отправка данных SendData",
+            central_widget
+        );
+
+    QVBoxLayout *send_layout =
+        new QVBoxLayout(send_group);
+
+    QHBoxLayout *send_settings_layout =
+        new QHBoxLayout();
+
+    send_settings_layout->addWidget(
+        create_label("Канал UART:")
+    );
+
+    channel_input =
+        new QSpinBox(send_group);
+
     channel_input->setRange(0, 15);
     channel_input->setValue(0);
-    send_settings_layout->addWidget(channel_input);
 
-    send_layout->addLayout(send_settings_layout);
+    send_settings_layout->addWidget(
+        channel_input
+    );
 
-    QHBoxLayout *data_layout = new QHBoxLayout();
+    send_settings_layout->addStretch();
 
-    data_layout->addWidget(create_label("Байты:"));
+    send_layout->addLayout(
+        send_settings_layout
+    );
 
-    bytes_input = new QLineEdit(send_group);
-    bytes_input->setPlaceholderText("Например: 01 02 AA FF");
-    data_layout->addWidget(bytes_input);
+    QHBoxLayout *data_layout =
+        new QHBoxLayout();
 
-    send_button = new QPushButton("Отправить", send_group);
-    data_layout->addWidget(send_button);
+    data_layout->addWidget(
+        create_label("Байты:")
+    );
 
-    send_layout->addLayout(data_layout);
+    bytes_input =
+        new QLineEdit(send_group);
 
-    send_group->setLayout(send_layout);
-    main_layout->addWidget(send_group);
+    bytes_input->setPlaceholderText(
+        "Например: 01 02 AA FF"
+    );
 
-    QGroupBox *subscribe_group = new QGroupBox("Прием данных Subscribe", central_widget);
-    QHBoxLayout *subscribe_layout = new QHBoxLayout(subscribe_group);
+    data_layout->addWidget(
+        bytes_input
+    );
 
-    subscribe_button = new QPushButton("Запустить подписку", subscribe_group);
-    subscribe_layout->addWidget(subscribe_button);
+    send_button =
+        new QPushButton(
+            "Отправить",
+            send_group
+        );
 
-    subscribe_group->setLayout(subscribe_layout);
-    main_layout->addWidget(subscribe_group);
+    data_layout->addWidget(
+        send_button
+    );
 
-    QGroupBox *sent_group = new QGroupBox("Отправленные данные", central_widget);
-    QVBoxLayout *sent_layout = new QVBoxLayout(sent_group);
+    send_layout->addLayout(
+        data_layout
+    );
 
-    sent_log = new QTextEdit(sent_group);
+    main_layout->addWidget(
+        send_group
+    );
+
+    /*
+     * Subscribe
+     */
+    QGroupBox *subscribe_group =
+        new QGroupBox(
+            "Прием данных Subscribe",
+            central_widget
+        );
+
+    QHBoxLayout *subscribe_layout =
+        new QHBoxLayout(subscribe_group);
+
+    subscribe_button =
+        new QPushButton(
+            "Запустить подписку",
+            subscribe_group
+        );
+
+    subscribe_layout->addWidget(
+        subscribe_button
+    );
+
+    main_layout->addWidget(
+        subscribe_group
+    );
+    QHBoxLayout *logs_layout =
+        new QHBoxLayout();
+
+    QGroupBox *sent_group =
+        new QGroupBox(
+            "Отправленные данные",
+            central_widget
+        );
+
+    QVBoxLayout *sent_layout =
+        new QVBoxLayout(sent_group);
+
+    sent_log =
+        new QTextEdit(sent_group);
+
     sent_log->setReadOnly(true);
-    sent_layout->addWidget(sent_log);
+    sent_log->setMinimumHeight(180);
 
-    sent_group->setLayout(sent_layout);
-    main_layout->addWidget(sent_group);
+    sent_layout->addWidget(
+        sent_log
+    );
 
-    QGroupBox *received_group = new QGroupBox("Принятые данные", central_widget);
-    QVBoxLayout *received_layout = new QVBoxLayout(received_group);
+    logs_layout->addWidget(
+        sent_group
+    );
 
-    received_log = new QTextEdit(received_group);
+    QGroupBox *received_group =
+        new QGroupBox(
+            "Принятые данные",
+            central_widget
+        );
+
+    QVBoxLayout *received_layout =
+        new QVBoxLayout(received_group);
+
+    received_log =
+        new QTextEdit(received_group);
+
     received_log->setReadOnly(true);
-    received_layout->addWidget(received_log);
+    received_log->setMinimumHeight(180);
 
-    received_group->setLayout(received_layout);
-    main_layout->addWidget(received_group);
+    received_layout->addWidget(
+        received_log
+    );
 
-    status_label = create_label("Статус: готово");
-    main_layout->addWidget(status_label);
+    logs_layout->addWidget(
+        received_group
+    );
 
-    central_widget->setLayout(main_layout);
+    main_layout->addLayout(
+        logs_layout
+    );
 
-    QObject::connect(send_button, &QPushButton::clicked, [this]() {
-        on_send_clicked();
-    });
+    status_label =
+        create_label(
+            "Статус: клиент не инициализирован"
+        );
 
-    QObject::connect(subscribe_button, &QPushButton::clicked, [this]() {
-        on_subscribe_clicked();
-    });
+    main_layout->addWidget(
+        status_label
+    );
+
+    QObject::connect(
+        connect_button,
+        &QPushButton::clicked,
+        [this]()
+        {
+            on_connect_clicked();
+        }
+    );
+
+    QObject::connect(
+        send_button,
+        &QPushButton::clicked,
+        [this]()
+        {
+            on_send_clicked();
+        }
+    );
+
+    QObject::connect(
+        subscribe_button,
+        &QPushButton::clicked,
+        [this]()
+        {
+            on_subscribe_clicked();
+        }
+    );
+
+    set_driver_controls_enabled(false);
+}
+
+void QtViewRS485::set_driver_controls_enabled(
+    bool enabled
+)
+{
+    channel_input->setEnabled(enabled);
+    bytes_input->setEnabled(enabled);
+    send_button->setEnabled(enabled);
+    subscribe_button->setEnabled(enabled);
+}
+
+void QtViewRS485::on_connect_clicked()
+{
+    const QString endpoint =
+        driver_endpoint_input->text().trimmed();
+
+    try
+    {
+        const bool initialized =
+            rs485_service_->connect(
+                endpoint.toStdString()
+            );
+
+        if (initialized)
+        {
+            set_driver_controls_enabled(true);
+
+            status_label->setText(
+                "Статус: gRPC-клиент инициализирован для "
+                + endpoint
+            );
+        }
+        else
+        {
+            set_driver_controls_enabled(false);
+
+            status_label->setText(
+                "Статус: не удалось инициализировать "
+                "gRPC-клиент"
+            );
+        }
+    }
+    catch (const std::exception &error)
+    {
+        set_driver_controls_enabled(false);
+
+        status_label->setText(
+            "Статус: "
+            + QString::fromStdString(
+                error.what()
+            )
+        );
+    }
 }
 
 void QtViewRS485::on_send_clicked()
 {
-    const QString endpoint = driver_endpoint_input->text();
-    const int channel = channel_input->value();
-    const QString bytes = bytes_input->text();
-
-    append_sent_log(
-        "endpoint: " + endpoint +
-        "\nchannel_id: " + QString::number(channel) +
-        "\ndata: " + bytes +
-        "\nstatus: SendData пока не подключен к gRPC\n"
-    );
-
-    status_label->setText("Статус: SendData пока не подключен к gRPC");
-
-    /*
-        Позже здесь будет вызов логического слоя:
-
-        rsService->sendData(
-            endpoint.toStdString(),
-            channel,
-            bytes.toStdString()
+    const uint32_t channel_id =
+        static_cast<uint32_t>(
+            channel_input->value()
         );
 
-        Интерфейс только берет данные у пользователя.
-        Проверка корректности, парсинг байтов и обработка ошибок —
-        в service/driver слое.
-    */
+    const QString bytes_text =
+        bytes_input->text();
+
+    try
+    {
+        const SendDataResult result =
+            rs485_service_->sendData(
+                channel_id,
+                bytes_text.toStdString()
+            );
+
+        QString log_entry;
+
+        log_entry += "channel_id: ";
+        log_entry += QString::number(
+            result.channel_id
+        );
+
+        log_entry += "\ndata: ";
+        log_entry += bytes_text;
+
+        log_entry += "\nsuccess: ";
+        log_entry +=
+            result.success ? "true" : "false";
+
+        log_entry += "\nmessage: ";
+        log_entry += QString::fromStdString(
+            result.error_message
+        );
+
+        log_entry += "\n";
+
+        append_sent_log(log_entry);
+
+        if (result.success)
+        {
+            status_label->setText(
+                "Статус: данные отправлены"
+            );
+        }
+        else
+        {
+            status_label->setText(
+                "Статус: ошибка отправки — "
+                + QString::fromStdString(
+                    result.error_message
+                )
+            );
+        }
+    }
+    catch (const std::exception &error)
+    {
+        append_sent_log(
+            "channel_id: "
+            + QString::number(channel_id)
+            + "\ndata: "
+            + bytes_text
+            + "\nexception: "
+            + QString::fromStdString(
+                error.what()
+            )
+            + "\n"
+        );
+
+        status_label->setText(
+            "Статус: "
+            + QString::fromStdString(
+                error.what()
+            )
+        );
+    }
 }
 
 void QtViewRS485::on_subscribe_clicked()
 {
-    subscribed = !subscribed;
-
-    if (subscribed)
+    if (!subscribed)
     {
-        subscribe_button->setText("Остановить подписку");
+        try
+        {
+            rs485_service_->startSubscribe(
+                [this](
+                    const ReceiveDataResult &result
+                )
+                {
+                    QMetaObject::invokeMethod(
+                        central_widget,
+                        [this, result]()
+                        {
+                            handle_received_data(
+                                result
+                            );
+                        },
+                        Qt::QueuedConnection
+                    );
+                }
+            );
 
-        append_received_log("Subscribe запущен. Ожидание данных от RS-485 драйвера...\n");
+            subscribed = true;
 
-        status_label->setText("Статус: Subscribe пока не подключен к gRPC");
+            subscribe_button->setText(
+                "Остановить подписку"
+            );
 
-        /*
-            Позже здесь будет запуск чтения gRPC stream.
+            append_received_log(
+                "Subscribe started. "
+                "Waiting for data...\n"
+            );
 
-            Важно:
-            чтение Subscribe нельзя делать в UI-потоке,
-            иначе окно зависнет.
-            Нужно будет вынести в отдельный поток или асинхронный клиент.
-        */
+            status_label->setText(
+                "Статус: подписка запущена"
+            );
+        }
+        catch (const std::exception &error)
+        {
+            subscribed = false;
+
+            status_label->setText(
+                "Статус: "
+                + QString::fromStdString(
+                    error.what()
+                )
+            );
+        }
     }
     else
     {
-        subscribe_button->setText("Запустить подписку");
+        try
+        {
+            rs485_service_->stopSubscribe();
 
-        append_received_log("Subscribe остановлен.\n");
+            subscribed = false;
 
-        status_label->setText("Статус: готово");
+            subscribe_button->setText(
+                "Запустить подписку"
+            );
 
-        /*
-            Позже здесь будет остановка подписки:
-            cancel context / остановить поток чтения.
-        */
+            append_received_log(
+                "Subscribe stopped.\n"
+            );
+
+            status_label->setText(
+                "Статус: подписка остановлена"
+            );
+        }
+        catch (const std::exception &error)
+        {
+            status_label->setText(
+                "Статус: "
+                + QString::fromStdString(
+                    error.what()
+                )
+            );
+        }
     }
 }
 
-void QtViewRS485::append_sent_log(const QString &text)
+void QtViewRS485::handle_received_data(
+    const ReceiveDataResult &result
+)
+{
+    QString log_entry;
+
+    log_entry += "channel_id: ";
+    log_entry += QString::number(
+        result.channel_id
+    );
+
+    log_entry += "\nsuccess: ";
+    log_entry +=
+        result.success ? "true" : "false";
+
+    for (std::size_t index = 0;
+         index < result.packets.size();
+         ++index)
+    {
+        log_entry += "\npacket[";
+        log_entry += QString::number(index);
+        log_entry += "]: ";
+
+        log_entry += packet_to_hex(
+            result.packets[index]
+        );
+    }
+
+    log_entry += "\nmessage: ";
+    log_entry += QString::fromStdString(
+        result.error_message
+    );
+
+    log_entry += "\n";
+
+    append_received_log(log_entry);
+
+    if (result.success)
+    {
+        status_label->setText(
+            "Статус: получены данные"
+        );
+    }
+    else
+    {
+        status_label->setText(
+            "Статус: ошибка приема — "
+            + QString::fromStdString(
+                result.error_message
+            )
+        );
+    }
+}
+
+QString QtViewRS485::packet_to_hex(
+    const ReceiveDataPacket &packet
+)
+{
+    QString result;
+
+    for (std::size_t index = 0;
+         index < packet.bytes.size();
+         ++index)
+    {
+        result += QStringLiteral("%1").arg(
+            static_cast<unsigned int>(
+                packet.bytes[index]
+            ),
+            2,
+            16,
+            QLatin1Char('0')
+        ).toUpper();
+
+        if (index + 1 < packet.bytes.size())
+        {
+            result += " ";
+        }
+    }
+
+    return result;
+}
+
+void QtViewRS485::append_sent_log(
+    const QString &text
+)
 {
     sent_log->append(text);
 }
 
-void QtViewRS485::append_received_log(const QString &text)
+void QtViewRS485::append_received_log(
+    const QString &text
+)
 {
     received_log->append(text);
 }
@@ -210,13 +605,17 @@ QWidget *QtViewRS485::create_widget() const
     }
     catch (const std::bad_alloc &)
     {
-        std::cerr << "Не удалось создать QWidget." << std::endl;
+        std::cerr
+            << "Failed to create QWidget."
+            << std::endl;
     }
 
     return widget;
 }
 
-QVBoxLayout *QtViewRS485::create_v_box_layout(QWidget *const parent) const
+QVBoxLayout *QtViewRS485::create_v_box_layout(
+    QWidget *const parent
+) const
 {
     QVBoxLayout *layout{nullptr};
 
@@ -226,13 +625,17 @@ QVBoxLayout *QtViewRS485::create_v_box_layout(QWidget *const parent) const
     }
     catch (const std::bad_alloc &)
     {
-        std::cerr << "Не удалось создать QVBoxLayout." << std::endl;
+        std::cerr
+            << "Failed to create QVBoxLayout."
+            << std::endl;
     }
 
     return layout;
 }
 
-QLabel *QtViewRS485::create_label(const QString &text) const
+QLabel *QtViewRS485::create_label(
+    const QString &text
+) const
 {
     QLabel *label{nullptr};
 
@@ -242,7 +645,9 @@ QLabel *QtViewRS485::create_label(const QString &text) const
     }
     catch (const std::bad_alloc &)
     {
-        std::cerr << "Не удалось создать QLabel." << std::endl;
+        std::cerr
+            << "Failed to create QLabel."
+            << std::endl;
     }
 
     return label;

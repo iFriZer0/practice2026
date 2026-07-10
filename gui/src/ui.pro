@@ -1,11 +1,20 @@
-QT       += core gui widgets
+QT += core gui widgets
 
 CONFIG += c++20
+CONFIG += link_pkgconfig
 
-QMAKE_CXXFLAGS += -Wall -Werror -Wpedantic -Wextra -Wfloat-conversion -Wfloat-equal
+PKGCONFIG += grpc++ protobuf
+
+QMAKE_CXXFLAGS += \
+    -Wall \
+    -Werror \
+    -Wpedantic \
+    -Wextra \
+    -Wfloat-conversion \
+    -Wfloat-equal
 
 INCLUDEPATH += \
-    graphical_views/ \
+    graphical_views \
     graphical_views/widgets \
     graphical_views/views \
     graphical_views/views/main \
@@ -14,7 +23,9 @@ INCLUDEPATH += \
     errors \
     application \
     application/factory \
-    application/factory/errors
+    application/factory/errors \
+    ../../rs/service \
+    ../../rs/driver
 
 SOURCES += \
     application/application.cpp \
@@ -39,6 +50,12 @@ SOURCES += \
     graphical_views/views/main/qt_view_pku.cpp \
     graphical_views/views/main/qt_view_rs_485.cpp \
     graphical_views/widgets/main_window.cpp \
+    ../../rs/service/rs485_service.cpp \
+    ../../rs/service/rs485_subscriber.cpp \
+    ../../rs/service/rs485_utils.cpp \
+    ../../rs/service/rs485_errors.cpp \
+    ../../rs/driver/rs485_driver.pb.cc \
+    ../../rs/driver/rs485_driver.grpc.pb.cc \
     main.cpp
 
 HEADERS += \
@@ -75,7 +92,14 @@ HEADERS += \
     graphical_views/views/main/qt_view_pku.h \
     graphical_views/views/main/qt_view_rs_485.h \
     graphical_views/views/main/view.h \
-    graphical_views/widgets/main_window.h
+    graphical_views/widgets/main_window.h \
+    ../../rs/service/rs485_service.h \
+    ../../rs/service/rs485_subscriber.h \
+    ../../rs/service/rs485_utils.h \
+    ../../rs/service/rs485_errors.h \
+    ../../rs/service/rs485_types.h \
+    ../../rs/driver/rs485_driver.pb.h \
+    ../../rs/driver/rs485_driver.grpc.pb.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -86,11 +110,7 @@ DISTFILES += \
     .clangd
 
 DESTDIR = $$PWD/build/out
-
 OBJECTS_DIR = $$PWD/build/obj
-
 MOC_DIR = $$PWD/build/moc
-
 UI_DIR = $$PWD/build/ui
-
 RCC_DIR = $$PWD/build/rcc
