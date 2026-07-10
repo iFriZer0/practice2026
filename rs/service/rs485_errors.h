@@ -3,22 +3,41 @@
 
 #include <string>
 
-enum class Rs485Error
+#include <grpcpp/support/status.h>
+
+#include "../driver/rs485_driver.pb.h"
+
+enum class ClientError
 {
     None,
 
+    NotConnected,
+
+    InvalidEndpoint,
+
     InvalidHex,
 
-    ConnectionError,
+    EmptyData,
 
-    NoReply,
+    EmptyCallback,
 
-    Timeout,
+    StreamCreationFailed,
+
+    StreamWriteFailed,
+
+    NoResponse,
 
     Unknown
 };
 
-std::string errorToString(
-    Rs485Error error);
+std::string clientErrorToString(ClientError error);
+
+std::string pultErrorToString(
+    rs485::driver::v1::PultErrors error
+);
+
+std::string grpcStatusToString(
+    const grpc::Status &status
+);
 
 #endif
