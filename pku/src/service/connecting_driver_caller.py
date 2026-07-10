@@ -3,12 +3,12 @@ import typing
 import logging
 import grpc
 import google.protobuf.empty_pb2
-import driver_caller
 import pku_driver_pb2
 import pku_driver_pb2_grpc
 import decorate_with_logger
 import connecting_driver_caller_ping_error
 import connecting_driver_caller_connection_error
+from calls import driver_caller
 
 
 class ResponseProtocol(typing.Protocol):

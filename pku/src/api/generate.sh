@@ -1,10 +1,12 @@
 #!/bin/bash
 
-readonly DIRECTORY_SERVICE_CPP="../grpc_service_cpp"
-readonly DIRECTORY_PKU_DRIVER_CPP="../driver/grpc_pku_driver_cpp"
-readonly DIRECTORY_PKU_DRIVER_PYTHON="../service"
+readonly DIRECTORY_PKU_DRIVER_API="."
+readonly DIRECTORY_PKU_SERVICE_API="../../../api"
 
-readonly API_SERVICE="service.proto"
+readonly DIRECTORY_PKU_DRIVER="../driver/grpc_pku_driver_cpp"
+readonly DIRECTORY_PKU_SERVICE="../service"
+
+readonly API_PKU_SERVICE="pku_service.proto"
 readonly API_PKU_DRIVER="pku_driver.proto"
 
 generate_grpc_cpp() {
@@ -14,10 +16,10 @@ generate_grpc_cpp() {
 
 generate_grpc_python() {
 	mkdir -p "$1"
-        python -m grpc_tools.protoc -I. --python_out="$1" --pyi_out="$1" --grpc_python_out="$1" "$2"
-	touch "$1/__init__.py"
+        python -m grpc_tools.protoc -I"$1" --python_out="$2" --pyi_out="$2" --grpc_python_out="$2" "$3"
 }
 
 cd "$(dirname "$0")" || exit 1
-generate_grpc_cpp "$DIRECTORY_PKU_DRIVER_CPP" "$API_PKU_DRIVER"
-generate_grpc_python "$DIRECTORY_PKU_DRIVER_PYTHON" "$API_PKU_DRIVER"
+generate_grpc_cpp "$DIRECTORY_PKU_DRIVER" "$API_PKU_DRIVER"
+generate_grpc_python "$DIRECTORY_PKU_DRIVER_API" "$DIRECTORY_PKU_SERVICE" "$API_PKU_DRIVER"
+generate_grpc_python "$DIRECTORY_PKU_SERVICE_API" "$DIRECTORY_PKU_SERVICE" "$API_PKU_SERVICE"
