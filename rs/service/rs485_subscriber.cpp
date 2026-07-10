@@ -22,6 +22,11 @@ void Rs485Subscriber::start(
         return;
     }
 
+    if (worker_.joinable())
+    {
+        worker_.join();
+    }
+    
     if (stub == nullptr)
     {
         throw std::invalid_argument(

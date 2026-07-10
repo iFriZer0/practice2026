@@ -45,7 +45,9 @@ private:
 
     std::shared_ptr<grpc::Channel> channel_;
 
-    std::unique_ptr<rs485::driver::v1::Rs485Driver::Stub> stub_;
+    std::unique_ptr<
+        rs485::driver::v1::Rs485Driver::Stub
+    > stub_;
 
     std::unique_ptr<Rs485Subscriber> subscriber_;
 };
