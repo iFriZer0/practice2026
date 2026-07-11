@@ -1,13 +1,13 @@
 import typing
 import json
-import address_loader
+import validating_address_loader
 import json_address_loader_file_not_found_error
 import json_address_loader_permission_error
 import json_address_loader_is_a_directory_error
 import json_address_loader_parse_error
 
 
-class JSONAddressLoader(address_loader.AddressLoader):
+class JSONAddressLoader(validating_address_loader.ValidatingAddressLoader):
     IP_KEY: str = "ip"
     PORT_KEY: str = "port"
 
@@ -18,8 +18,8 @@ class JSONAddressLoader(address_loader.AddressLoader):
         try:
             with open(path, "r", encoding="utf-8") as file:
                 data: typing.Dict[typing.Any, typing.Any] = json.load(file)
-                self.ip = data[self.IP_KEY]
-                self.port = data[self.PORT_KEY]
+                self.ip = self._parse_ip(data[self.IP_KEY])
+                self.port = self._parse_port(data[self.PORT_KEY])
         except FileNotFoundError as exception:
             raise json_address_loader_file_not_found_error.JSONAddressLoaderFileNotFoundError(
                 "File was not found",
