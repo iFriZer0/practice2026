@@ -12,6 +12,14 @@ GrpcMkoClient::GrpcMkoClient(const std::string &server_address)
 {
 }
 
+GrpcMkoClient::~GrpcMkoClient()
+{
+    // Останавливаем фоновый поток SubscribeOuCommands перед
+    // разрушением stub-а, иначе поток мог бы обратиться к уже
+    // уничтоженному объекту.
+    unsubscribe_ou_commands();
+}
+
 void GrpcMkoClient::configure_kk(const ConfigureKKRequestData &request)
 {
     mko::workstation::v1::ConfigureKKRequest proto_request;
@@ -182,6 +190,88 @@ void GrpcMkoClient::clear_transmit_buffer(const ClearBufferRequestData &request)
     grpc::ClientContext context;
     const grpc::Status status{stub->ClearTransmitBuffer(&context, proto_request, &response)};
     throw_if_not_ok(status, "ClearTransmitBuffer");
+}
+
+void GrpcMkoClient::subscribe_ou_commands(const SubscribeOuCommandsRequestData &request,
+                                           OuCommandEventHandler on_event,
+                                           OuSubscriptionErrorHandler on_error)
+{
+    // Повторная подписка сначала гасит предыдущую — у сервиса нет
+    // смысла держать два параллельных потока на одну и ту же вьюху.
+    unsubscribe_ou_commands();
+
+    mko::workstation::v1::SubscribeOuCommandsRequest proto_request;
+    proto_request.set_board_id(request.board_id);
+
+    auto context = std::make_unique<grpc::ClientContext>();
+    grpc::ClientContext *const context_ptr{context.get()};
+
+    {
+        std::lock_guard<std::mutex> lock{subscribe_mutex};
+        subscribe_context = std::move(context);
+        subscribe_active = true;
+    }
+
+    subscribe_thread = std::thread{[this, context_ptr, proto_request, on_event, on_error]() {
+        const std::unique_ptr<grpc::ClientReaderInterface<mko::workstation::v1::OuCommandEvent>> reader{
+                stub->SubscribeOuCommands(context_ptr, proto_request)};
+
+        mko::workstation::v1::OuCommandEvent event;
+        while (subscribe_active.load() && reader->Read(&event))
+        {
+            if (on_event)
+            {
+                on_event(OuCommandEventData{
+                        event.cmd_word(),
+                        event.result_word(),
+                        event.receive_from_ou(),
+                        event.ou_address(),
+                        event.subaddress(),
+                        event.word_count(),
+                        event.decoded_command(),
+                        event.decoded_result()
+                });
+            }
+        }
+
+        // Явная отписка (TryCancel из unsubscribe_ou_commands) тоже
+        // приводит к тому, что Read() вернёт false и Finish() вернёт
+        // CANCELLED — это штатное завершение, а не ошибка потока, и
+        // о нём сообщать через on_error не нужно.
+        const bool was_stopped_explicitly{!subscribe_active.load()};
+        const grpc::Status status{reader->Finish()};
+        subscribe_active = false;
+
+        if (!status.ok() && !was_stopped_explicitly && on_error)
+        {
+            on_error(std::to_string(status.error_code()) + " " + status.error_message());
+        }
+    }};
+}
+
+void GrpcMkoClient::unsubscribe_ou_commands()
+{
+    grpc::ClientContext *context_ptr{nullptr};
+
+    {
+        std::lock_guard<std::mutex> lock{subscribe_mutex};
+        if (!subscribe_thread.joinable())
+        {
+            return;
+        }
+        subscribe_active = false;
+        context_ptr = subscribe_context.get();
+    }
+
+    if (context_ptr != nullptr)
+    {
+        context_ptr->TryCancel();
+    }
+
+    subscribe_thread.join();
+
+    std::lock_guard<std::mutex> lock{subscribe_mutex};
+    subscribe_context.reset();
 }
 
 void GrpcMkoClient::throw_if_not_ok(const grpc::Status &status, const std::string &operation_name)

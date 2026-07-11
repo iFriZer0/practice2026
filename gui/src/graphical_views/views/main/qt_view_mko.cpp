@@ -11,6 +11,7 @@
 #include <QHeaderView>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMetaObject>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QSpinBox>
@@ -388,10 +389,71 @@ QWidget *QtViewMKO::create_ou_panel()
     add_labeled_widget(subscribe_layout, 0, "Board ID", subscribe_board_id);
 
     QPushButton *subscribe_button{new QPushButton{"Подписаться на команды ОУ", subscribe_group}};
+    subscribe_button->setProperty("subscribed", false);
     subscribe_layout->addWidget(subscribe_button, 1, 0, 1, 2);
 
-    QObject::connect(subscribe_button, &QPushButton::clicked, [this, subscribe_board_id]() {
-        append_log(QString{"SubscribeOuCommands: board=%1"}.arg(subscribe_board_id->text()));
+    // SubscribeOuCommands — server-streaming RPC: подписка открывает
+    // фоновый поток в GrpcMkoClient, события приходят не в GUI-потоке,
+    // поэтому обновление виджетов делается через
+    // QMetaObject::invokeMethod(..., Qt::QueuedConnection) с
+    // central_widget в роли контекста — это и переносит вызов в поток
+    // GUI, и гарантирует, что колбэк не выстрелит после уничтожения
+    // виджета.
+    QObject::connect(subscribe_button, &QPushButton::clicked, [this, subscribe_button, subscribe_board_id]() {
+        if (mko_client == nullptr)
+        {
+            append_log("SubscribeOuCommands: gRPC-клиент МКО не создан.");
+            return;
+        }
+
+        const bool is_subscribed{subscribe_button->property("subscribed").toBool()};
+        if (is_subscribed)
+        {
+            mko_client->unsubscribe_ou_commands();
+            subscribe_button->setProperty("subscribed", false);
+            subscribe_button->setText("Подписаться на команды ОУ");
+            subscribe_board_id->setEnabled(true);
+            append_log(QString{"SubscribeOuCommands: отписка board=%1"}.arg(subscribe_board_id->text()));
+            return;
+        }
+
+        const SubscribeOuCommandsRequestData request{subscribe_board_id->text().toStdString()};
+        QWidget *const ui_context{central_widget};
+
+        try
+        {
+            mko_client->subscribe_ou_commands(
+                    request,
+                    [this, ui_context](const OuCommandEventData &event) {
+                        QMetaObject::invokeMethod(
+                                ui_context,
+                                [this, event]() { append_ou_command_event(event); },
+                                Qt::QueuedConnection);
+                    },
+                    [this, ui_context, subscribe_button, subscribe_board_id](const std::string &error_message) {
+                        QMetaObject::invokeMethod(
+                                ui_context,
+                                [this, subscribe_button, subscribe_board_id, error_message]() {
+                                    append_log(
+                                            QString{"SubscribeOuCommands: поток завершился с ошибкой: %1"}
+                                                    .arg(QString::fromStdString(error_message)));
+                                    subscribe_button->setProperty("subscribed", false);
+                                    subscribe_button->setText("Подписаться на команды ОУ");
+                                    subscribe_board_id->setEnabled(true);
+                                },
+                                Qt::QueuedConnection);
+                    });
+        }
+        catch (const std::exception &exception)
+        {
+            append_log(QString{"SubscribeOuCommands: ошибка: %1"}.arg(exception.what()));
+            return;
+        }
+
+        subscribe_button->setProperty("subscribed", true);
+        subscribe_button->setText("Отписаться от команд ОУ");
+        subscribe_board_id->setEnabled(false);
+        append_log(QString{"SubscribeOuCommands: подписка board=%1"}.arg(subscribe_board_id->text()));
     });
 
     QGroupBox *read_group{create_group_box("ОУ: ReadOuSubaddress")};
@@ -853,6 +915,22 @@ void QtViewMKO::append_ou_subaddress_data(const OuSubaddressData &data)
                     .arg(QString::fromStdString(data.decoded_result))
     );
     append_log(QString{"OuSubaddressData.sd: [%1]"}.arg(format_words(data.sd)));
+}
+
+void QtViewMKO::append_ou_command_event(const OuCommandEventData &data)
+{
+    append_log(
+            QString{"OuCommandEvent: cmd_word=%1 result_word=%2 receive_from_ou=%3 ou_address=%4 "
+                    "subaddress=%5 word_count=%6 decoded_command=\"%7\" decoded_result=\"%8\""}
+                    .arg(format_word(data.cmd_word))
+                    .arg(format_word(data.result_word))
+                    .arg(data.receive_from_ou ? "true" : "false")
+                    .arg(data.ou_address)
+                    .arg(data.subaddress)
+                    .arg(data.word_count)
+                    .arg(QString::fromStdString(data.decoded_command))
+                    .arg(QString::fromStdString(data.decoded_result))
+    );
 }
 
 void QtViewMKO::sync_mko_indices(QSpinBox *const changed_spin_box)

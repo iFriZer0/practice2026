@@ -1,7 +1,30 @@
-MODULE := mko
+MODULE     := mko
+BIN_DIR    := bin
 GUI_CPP_OUT := ../gui/src/generated/mko
 
-.PHONY: proto proto-api proto-driver proto-gui-cpp tidy run
+SERVICE     := $(BIN_DIR)/mko-service
+FAKE_DRIVER := $(BIN_DIR)/fake-mko-driver
+
+.PHONY: all build service fake-driver clean proto proto-api proto-driver proto-gui-cpp tidy run run-fake
+
+all: build
+
+build: service fake-driver
+
+service:
+	go build -o $(SERVICE) ./cmd/mko-service
+
+fake-driver:
+	go build -o $(FAKE_DRIVER) ./cmd/fake-mko-driver
+
+clean:
+	rm -rf $(BIN_DIR)
+
+run: service
+	$(SERVICE)
+
+run-fake: fake-driver
+	$(FAKE_DRIVER)
 
 proto: proto-api proto-driver
 
@@ -30,6 +53,3 @@ proto-gui-cpp:
 
 tidy:
 	go mod tidy
-
-run:
-	go run ./cmd/mko

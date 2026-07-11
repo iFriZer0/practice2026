@@ -21,6 +21,7 @@
 
 class MkoClient;
 struct OuSubaddressData;
+struct OuCommandEventData;
 
 class QtViewMKO : public View
 {
@@ -81,6 +82,8 @@ private:
     QString format_words(const std::vector<uint32_t> &words) const;
 
     void append_ou_subaddress_data(const OuSubaddressData &data);
+
+    void append_ou_command_event(const OuCommandEventData &data);
 
     void sync_mko_indices(QSpinBox *const changed_spin_box);
 
