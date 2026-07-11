@@ -56,7 +56,7 @@ grpc::Status PkuDriverPlug::CheckConnection(
 )
 {
     response->set_success(true);
-    response->set_error_message(nullptr);
+    response->set_error_message("");
     return grpc::Status::OK;
 }
 
@@ -67,7 +67,7 @@ grpc::Status PkuDriverPlug::GetHardwareStatus(
 )
 {
     response->set_success(true);
-    response->set_error_message(nullptr);
+    response->set_error_message("");
     return grpc::Status::OK;
 }
 
@@ -78,7 +78,7 @@ grpc::Status PkuDriverPlug::ReadMainInfo(
 )
 {
     response->set_success(true);
-    response->set_error_message(nullptr);
+    response->set_error_message("");
     response->set_data(convert_main_information());
     return grpc::Status::OK;
 }
@@ -97,7 +97,7 @@ grpc::Status PkuDriverPlug::WriteMainInfo(
     main_information.dns = convert_address(request->dns());
     main_information.use_dhcp = request->use_dhcp();
     response->set_success(true);
-    response->set_error_message(nullptr);
+    response->set_error_message("");
     return grpc::Status::OK;
 }
 
