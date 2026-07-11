@@ -11,7 +11,7 @@ class ConnectionCheckConverter(converter.Converter[pku_driver_pb2.StandardRespon
         return destination
 
     def convert_to_source(self, destination: pku_service_pb2.CommandResponse) -> pku_driver_pb2.StandardResponse:
-        source: pku_driver_pb2.StandardResponse = pku_driver_pb2.StandardResponse
+        source: pku_driver_pb2.StandardResponse = pku_driver_pb2.StandardResponse()
         source.success = destination.success
         source.error_message = destination.result_text
         return source
