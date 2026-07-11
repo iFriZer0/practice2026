@@ -66,7 +66,7 @@ rmdir build log
 
 Драйвер запускается с помощью исполняемого файла ```build/driver```.
 
-Микросервис запускается с помощью скрипта ``service/run.sh````.
+Микросервис запускается с помощью скрипта ```service/run.sh````.
 
 ### Windows
 
@@ -88,6 +88,6 @@ rmdir build log
 
 Для запуска интеграционных тестов нужно запустить драйвер, микросервис и сами тесты в следующем порядке:
 
-1. ```build/driver```;
-2. ```python service/main.py```;
-3. ```python tests/integration_tests.py```.
+1. ```driver``` из директории ```build```;
+2. ```python main.py``` из директории ```service```;
+3. ```python integration_tests.py``` из директории ```tests```.

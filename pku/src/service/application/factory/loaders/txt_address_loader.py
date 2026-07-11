@@ -1,7 +1,7 @@
-import validating_address_loader
-import txt_address_loader_file_not_found_error
-import txt_address_loader_permission_error
-import txt_address_loader_is_a_directory_error
+from application.factory.loaders import validating_address_loader
+from application.factory.loaders.errors import txt_address_loader_file_not_found_error
+from application.factory.loaders.errors import txt_address_loader_permission_error
+from application.factory.loaders.errors import txt_address_loader_is_a_directory_error
 
 
 class TXTAddressLoader(validating_address_loader.ValidatingAddressLoader):

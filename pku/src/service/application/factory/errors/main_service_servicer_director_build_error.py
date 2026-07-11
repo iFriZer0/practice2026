@@ -1,4 +1,4 @@
-import main_service_servicer_director_error
+from application.factory.errors import main_service_servicer_director_error
 
 
 class MainServiceServicerDirectorBuildError(main_service_servicer_director_error.MainServiceServicerDirectorError):

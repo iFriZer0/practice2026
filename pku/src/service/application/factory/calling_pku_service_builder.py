@@ -1,10 +1,10 @@
 import enum
 import pku_service_pb2_grpc
 import calling_pku_service
-import connecting_driver_caller
-import main_service_servicer_builder
-import address_loader
+from application.factory import main_service_servicer_builder
+from application.factory.loaders import address_loader
 from calls import driver_caller
+from calls import connecting_driver_caller
 from factory import solution
 from factory import simple_creator
 

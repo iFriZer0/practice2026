@@ -5,7 +5,7 @@ import grpc
 import google.protobuf.empty_pb2
 import pku_driver_pb2
 import pku_driver_pb2_grpc
-import decorate_with_logger
+from application import decorate_with_logger
 from calls import driver_caller
 from calls.errors import connecting_driver_caller_connection_error
 from calls.errors import connecting_driver_caller_ping_error

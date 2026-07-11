@@ -4,10 +4,10 @@ import logging
 import grpc
 import pku_service_pb2_grpc
 import pku_service_pb2
-import connection_check_executor
-import decorate_with_logger
+from application import decorate_with_logger
 from calls import driver_caller
 from executors import executor
+from executors import connection_check_executor
 from executors.errors import executor_error
 from factory import solution
 from factory import simple_creator

@@ -1,7 +1,7 @@
 import pku_service_pb2_grpc
-import main_service_servicer_builder
-import main_service_servicer_builder_error
-import main_service_servicer_director_build_error
+from application.factory import main_service_servicer_builder
+from application.factory.errors import main_service_servicer_builder_error
+from application.factory.errors import main_service_servicer_director_build_error
 from factory import creator
 
 

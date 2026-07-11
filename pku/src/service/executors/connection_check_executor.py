@@ -1,6 +1,6 @@
 import enum
 import pku_service_pb2
-import connection_check_converter
+from conversion import connection_check_converter
 from executors import executor
 from executors.errors import connection_check_executor_call_error
 from executors.errors import connection_check_executor_conversion_error

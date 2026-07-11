@@ -1,7 +1,7 @@
 import ipaddress
-import address_loader
-import validating_address_loader_ip_error
-import validating_address_loader_port_error
+from application.factory.loaders import address_loader
+from application.factory.loaders.errors import validating_address_loader_ip_error
+from application.factory.loaders.errors import validating_address_loader_port_error
 
 
 class ValidatingAddressLoader(address_loader.AddressLoader):

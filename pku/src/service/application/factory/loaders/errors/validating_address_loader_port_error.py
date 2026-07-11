@@ -1,5 +1,5 @@
 import typing
-import validating_address_loader_error
+from application.factory.loaders.errors import validating_address_loader_error
 
 
 class ValidatingAddressLoaderPortError(validating_address_loader_error.ValidatingAddressLoaderError):

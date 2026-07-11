@@ -4,12 +4,12 @@ import os
 from concurrent import futures
 import grpc
 import pku_service_pb2_grpc
-import main_service_servicer_director
-import main_service_servicer_builder
-import calling_pku_service_builder
-import address_loader
-import json_address_loader
-import txt_address_loader
+from application.factory import main_service_servicer_director
+from application.factory import main_service_servicer_builder
+from application.factory import calling_pku_service_builder
+from application.factory.loaders import address_loader
+from application.factory.loaders import json_address_loader
+from application.factory.loaders import txt_address_loader
 from factory import solution
 from factory import simple_creator
 from errors import error

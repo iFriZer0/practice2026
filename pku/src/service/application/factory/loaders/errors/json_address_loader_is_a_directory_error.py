@@ -1,5 +1,5 @@
 import typing
-import json_address_loader_error
+from application.factory.loaders.errors import json_address_loader_error
 
 
 class JSONAddressLoaderIsADirectoryError(json_address_loader_error.JSONAddressLoaderError):

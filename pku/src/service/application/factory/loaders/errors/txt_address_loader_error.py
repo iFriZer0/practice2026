@@ -1,4 +1,4 @@
-import address_loader_error
+from application.factory.loaders.errors import address_loader_error
 
 
 class TXTAddressLoaderError(address_loader_error.AddressLoaderError):

@@ -1,10 +1,10 @@
 import typing
 import json
-import validating_address_loader
-import json_address_loader_file_not_found_error
-import json_address_loader_permission_error
-import json_address_loader_is_a_directory_error
-import json_address_loader_parse_error
+from application.factory.loaders import validating_address_loader
+from application.factory.loaders.errors import json_address_loader_file_not_found_error
+from application.factory.loaders.errors import json_address_loader_permission_error
+from application.factory.loaders.errors import json_address_loader_is_a_directory_error
+from application.factory.loaders.errors import json_address_loader_parse_error
 
 
 class JSONAddressLoader(validating_address_loader.ValidatingAddressLoader):
