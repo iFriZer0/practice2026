@@ -16,8 +16,8 @@ class TXTAddressLoader(address_loader.AddressLoader):
     def __init__(self, path: str) -> None:
         try:
             with open(path, "r", encoding="utf-8") as file:
-                self.__parse_ip(file.readline(), path)
-                self.__parse_port(file.readline(), path)
+                self.__parse_ip(file.readline().rstrip(), path)
+                self.__parse_port(file.readline().rstrip(), path)
         except FileNotFoundError as exception:
             raise txt_address_loader_file_not_found_error.TXTAddressLoaderFileNotFoundError(
                 "File was not found",
@@ -63,7 +63,9 @@ class TXTAddressLoader(address_loader.AddressLoader):
     def __parse_port(self, line: str, path: str) -> None:
         try:
             port: int = int(line)
-            if self.MINIMUM_PORT < port or port > self.MAXIMUM_PORT:
+            if port < self.MINIMUM_PORT or self.MAXIMUM_PORT < port:
+                print(line)
+                print(1)
                 raise txt_address_loader_parse_error.TXTAddressLoaderParseError(
                     "Incorrect file format",
                     txt_address_loader_parse_error.TXTAddressLoaderParseError,
