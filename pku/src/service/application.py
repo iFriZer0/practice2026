@@ -9,12 +9,15 @@ import main_service_servicer_builder
 import calling_pku_service_builder
 import address_loader
 import json_address_loader
+import txt_address_loader
 from factory import solution
 from factory import simple_creator
+from errors import error
 
 
 class Application:
     DRIVER_ADDRESS_PATH: str = "../configuration/driver_address.json"
+    SERVICE_ADDRESS_PATH: str = "../../../configuration/pku_service_address.txt"
 
     LOG_DIRECTORY: str = "log"
     LOG_PATH: str = "log/log.txt"
@@ -29,6 +32,7 @@ class Application:
 
     class Loaders(enum.Enum):
         JSON = 1
+        TXT = 2
 
     OK: int = 0
 
@@ -41,19 +45,14 @@ class Application:
     })
 
     loader_solution: solution.Solution[address_loader.AddressLoader, Loaders] = solution.Solution({
-        Loaders.JSON: lambda: simple_creator.SimpleCreator(json_address_loader.JSONAddressLoader)
+        Loaders.JSON: lambda: simple_creator.SimpleCreator(json_address_loader.JSONAddressLoader),
+        Loaders.TXT: lambda: simple_creator.SimpleCreator(txt_address_loader.TXTAddressLoader)
     })
 
     @classmethod
     def start(cls) -> int:
         cls.__configure_log()
-        loader: address_loader.AddressLoader = cls.loader_solution.make(cls.Loaders.JSON).create(cls.DRIVER_ADDRESS_PATH)
-        server: grpc.Server = grpc.server(futures.ThreadPoolExecutor(max_workers=cls.WORKERS_COUNT))
-        pku_service_pb2_grpc.add_MainServiceServicer_to_server(
-            cls.servicer_solution.make(cls.Servicers.BUILT).create(cls.builder_solution.make(cls.Builders.CALLING_PKU).create(loader)),
-            server
-        )
-        server.add_insecure_port("[::]:" + loader.load_port())
+        server: grpc.Server = cls.__create_server()
         server.start()
         server.wait_for_termination()
         return cls.OK
@@ -70,3 +69,22 @@ class Application:
             )
         except PermissionError:
             print("Недостаточно прав для создания лога.")
+
+    @classmethod
+    def __create_server(cls) -> grpc.Server:
+        try:
+            server: grpc.Server = grpc.server(futures.ThreadPoolExecutor(max_workers=cls.WORKERS_COUNT))
+            pku_service_pb2_grpc.add_MainServiceServicer_to_server(
+                cls.servicer_solution.make(
+                    cls.Servicers.BUILT
+                ).create(
+                    cls.builder_solution.make(
+                        cls.Builders.CALLING_PKU
+                    ).create(cls.loader_solution.make(cls.Loaders.JSON).create(cls.DRIVER_ADDRESS_PATH))
+                ),
+                server
+            )
+            server.add_insecure_port("[::]:" + cls.loader_solution.make(cls.Loaders.TXT).create(cls.SERVICE_ADDRESS_PATH).load_port())
+        except (error.Error, OSError) as exception:
+            print(f"Не удалось создать сервер: \"{str(exception):s}\".")
+        return server

@@ -1,5 +1,5 @@
 import typing
-import connecting_driver_caller_error
+from calls.errors import connecting_driver_caller_error
 
 
 class ConnectingDriverCallerPingError(connecting_driver_caller_error.ConnectingDriverCallerError):

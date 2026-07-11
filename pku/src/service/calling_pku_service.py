@@ -8,6 +8,7 @@ import connection_check_executor
 import decorate_with_logger
 from calls import driver_caller
 from executors import executor
+from executors.errors import executor_error
 from factory import solution
 from factory import simple_creator
 
@@ -56,5 +57,10 @@ class CallingPkuService(pku_service_pb2_grpc.MainServiceServicer):
             response = pku_service_pb2.CommandResponse()
             response.success = False
             response.result_text = f"Unknown command {request.command_id:d}"
-            self.logger.warning(f"Unkown command {request.command_id:d}")
+            self.logger.warning(f"Unkown command {request.command_id:d}.")
+        except executor_error.ExecutorError as exception:
+            response = pku_service_pb2.CommandResponse()
+            response.success = False
+            response.result_text = str(exception)
+            self.logger.warning(f"Execution error: \"{response.result_text:s}\".")
         return response

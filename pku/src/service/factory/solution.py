@@ -25,5 +25,5 @@ class Solution(typing.Generic[Base, Identifier]):
             return self.makers[identifier]()
         except KeyError as exception:
             raise solution_no_maker_error.SolutionNoMakerError(
-                "Maker was not found.", solution_no_maker_error.SolutionNoMakerError, identifier
+                "Maker was not found", solution_no_maker_error.SolutionNoMakerError, identifier
             ) from exception

@@ -6,9 +6,9 @@ import google.protobuf.empty_pb2
 import pku_driver_pb2
 import pku_driver_pb2_grpc
 import decorate_with_logger
-import connecting_driver_caller_ping_error
-import connecting_driver_caller_connection_error
 from calls import driver_caller
+from calls.errors import connecting_driver_caller_connection_error
+from calls.errors import connecting_driver_caller_ping_error
 
 Parameters = typing.ParamSpec("Parameters")
 Response = typing.TypeVar("Response")
@@ -49,7 +49,7 @@ class ConnectingDriverCaller(driver_caller.DriverCaller):
                 except grpc.RpcError as exception:
                     self.logger.error("Connection was lost before the call.")
                     raise connecting_driver_caller_connection_error.ConnectingDriverCallerConnectionError(
-                        "Connection is lost.", connecting_driver_caller_connection_error.ConnectingDriverCallerConnectionError
+                        "Connection is lost", connecting_driver_caller_connection_error.ConnectingDriverCallerConnectionError
                     ) from exception
             return output_function
         return call_with_connection_check
@@ -92,5 +92,5 @@ class ConnectingDriverCaller(driver_caller.DriverCaller):
         except grpc.FutureTimeoutError as exception:
             self.logger.error("Connection was not established.")
             raise connecting_driver_caller_ping_error.ConnectingDriverCallerPingError(
-                "Connection was not established.", connecting_driver_caller_ping_error.ConnectingDriverCallerPingError
+                "Connection was not established", connecting_driver_caller_ping_error.ConnectingDriverCallerPingError
             ) from exception
