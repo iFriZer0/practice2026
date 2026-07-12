@@ -1,69 +1,56 @@
 #ifndef RS485_SERVICE_H__
 #define RS485_SERVICE_H__
 
-#include <cstdint>
-#include <functional>
 #include <memory>
-#include <string>
 
 #include <grpcpp/grpcpp.h>
 
-#include "../driver/rs485_driver.grpc.pb.h"
-#include "rs485_types.h"
+#include "rs485_service.grpc.pb.h"
 
-class Rs485Subscriber;
+class Rs485DriverClient;
 
-class Rs485Service
+class Rs485ServiceImpl final
+    : public rs485::service::v1::Rs485Service::Service
 {
 public:
-    Rs485Service();
-    ~Rs485Service();
-
-    Rs485Service(
-        const Rs485Service &other
-    ) = delete;
-
-    Rs485Service(
-        Rs485Service &&other
-    ) = delete;
-
-    Rs485Service &operator=(
-        const Rs485Service &other
-    ) = delete;
-
-    Rs485Service &operator=(
-        Rs485Service &&other
-    ) = delete;
-
-    bool connect(
-        const std::string &endpoint
+    explicit Rs485ServiceImpl(
+        std::shared_ptr<Rs485DriverClient> driver_client
     );
 
-    bool isConnected() const noexcept;
+    ~Rs485ServiceImpl() override = default;
 
-    SendDataResult sendData(
-        uint32_t channel_id,
-        const std::string &bytes_text
-    );
+    Rs485ServiceImpl(
+        const Rs485ServiceImpl &other
+    ) = delete;
 
-    void startSubscribe(
-        std::function<
-            void(const ReceiveDataResult &)
-        > callback
-    );
+    Rs485ServiceImpl(
+        Rs485ServiceImpl &&other
+    ) = delete;
 
-    void stopSubscribe();
+    Rs485ServiceImpl &operator=(
+        const Rs485ServiceImpl &other
+    ) = delete;
+
+    Rs485ServiceImpl &operator=(
+        Rs485ServiceImpl &&other
+    ) = delete;
+
+    grpc::Status SendData(
+        grpc::ServerContext *context,
+        const rs485::service::v1::SendDataRequest *request,
+        rs485::service::v1::SendDataResponse *response
+    ) override;
+
+    grpc::Status Subscribe(
+        grpc::ServerContext *context,
+        const rs485::service::v1::SubscribeRequest *request,
+        grpc::ServerWriter<
+            rs485::service::v1::ReceiveDataResponse
+        > *writer
+    ) override;
 
 private:
-    std::string endpoint_;
-
-    std::shared_ptr<grpc::Channel> channel_;
-
-    std::unique_ptr<
-        rs485::driver::v1::Rs485Driver::Stub
-    > stub_;
-
-    std::unique_ptr<Rs485Subscriber> subscriber_;
+    std::shared_ptr<Rs485DriverClient> driver_client_;
 };
 
 #endif

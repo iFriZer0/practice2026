@@ -1,199 +1,420 @@
 #include "rs485_service.h"
 
+#include "rs485_driver_client.h"
 #include "rs485_errors.h"
-#include "rs485_subscriber.h"
-#include "rs485_utils.h"
 
+#include <chrono>
+#include <condition_variable>
+#include <cstdint>
+#include <deque>
+#include <exception>
+#include <iomanip>
+#include <mutex>
+#include <sstream>
+#include <stdexcept>
 #include <string>
 #include <utility>
-#include <vector>
-
-Rs485Service::Rs485Service()
-    : subscriber_{
-          std::make_unique<Rs485Subscriber>()
-      }
+namespace
 {
-}
 
-Rs485Service::~Rs485Service() = default;
-
-bool Rs485Service::connect(
-    const std::string &endpoint)
+std::string bytesToHexText(
+    const std::string &data)
 {
-    if (endpoint.empty())
+    std::ostringstream stream;
+
+    for (std::size_t index = 0;
+         index < data.size();
+         ++index)
     {
-        throw Rs485ValidationException(
-            "The RS-485 driver endpoint is empty"
-        );
-    }
-
-    stopSubscribe();
-
-    endpoint_ = endpoint;
-
-    channel_ = grpc::CreateChannel(
-        endpoint_,
-        grpc::InsecureChannelCredentials()
-    );
-
-    if (!channel_)
-    {
-        throw Rs485ConnectionException(
-            "Failed to create the gRPC channel"
-        );
-    }
-
-    stub_ =
-        rs485::driver::v1::Rs485Driver::NewStub(
-            channel_
-        );
-
-    if (!stub_)
-    {
-        channel_.reset();
-
-        throw Rs485ConnectionException(
-            "Failed to create the RS-485 gRPC stub"
-        );
-    }
-
-    return true;
-}
-
-bool Rs485Service::isConnected() const noexcept
-{
-    return static_cast<bool>(stub_);
-}
-
-SendDataResult Rs485Service::sendData(
-    uint32_t channel_id,
-    const std::string &bytes_text)
-{
-    if (!isConnected())
-    {
-        throw Rs485ConnectionException(
-            "The RS-485 service is not connected"
-        );
-    }
-
-    /*
-     * parseBytes() самостоятельно бросит
-     * Rs485ValidationException при неверных данных.
-     */
-    const std::vector<uint8_t> bytes =
-        parseBytes(bytes_text);
-
-    const std::string raw_data(
-        reinterpret_cast<const char *>(
-            bytes.data()
-        ),
-        bytes.size()
-    );
-
-    grpc::ClientContext context;
-
-    auto stream = stub_->SendData(&context);
-
-    if (!stream)
-    {
-        throw Rs485StreamException(
-            "Failed to create the SendData gRPC stream"
-        );
-    }
-
-    rs485::driver::v1::SendDataRequest request;
-
-    request.set_channel_id(channel_id);
-    request.set_data(raw_data);
-
-    if (!stream->Write(request))
-    {
-        stream->WritesDone();
-
-        const grpc::Status status =
-            stream->Finish();
-
-        if (!status.ok())
+        if (index != 0)
         {
-            throw Rs485GrpcException(status);
+            stream << ' ';
         }
 
-        throw Rs485StreamException(
-            "Failed to write SendDataRequest "
-            "to the gRPC stream"
-        );
+        stream
+            << std::uppercase
+            << std::hex
+            << std::setw(2)
+            << std::setfill('0')
+            << static_cast<unsigned int>(
+                   static_cast<unsigned char>(
+                       data[index]
+                   )
+               );
     }
 
-    stream->WritesDone();
-
-    rs485::driver::v1::SendDataResponce response;
-
-    const bool response_received =
-        stream->Read(&response);
-
-    const grpc::Status status =
-        stream->Finish();
-
-    if (!status.ok())
-    {
-        throw Rs485GrpcException(status);
-    }
-
-    if (!response_received)
-    {
-        throw Rs485StreamException(
-            "The RS-485 driver did not return "
-            "a SendData response"
-        );
-    }
-
-    if (!response.success() ||
-        response.error_message() !=
-            rs485::driver::v1::NO_ERROR)
-    {
-        throw Rs485DriverException(
-            response.error_message()
-        );
-    }
-
-    SendDataResult result;
-
-    result.success = true;
-    result.channel_id = response.channel_id();
-    result.error_message.clear();
-
-    return result;
+    return stream.str();
 }
 
-void Rs485Service::startSubscribe(
-    std::function<
-        void(const ReceiveDataResult &)
-    > callback)
+void fillErrorResponse(
+    rs485::service::v1::SendDataResponse *response,
+    uint32_t channel_id,
+    rs485::service::v1::ErrorCode error_code,
+    const std::string &error_message)
 {
-    if (!isConnected())
-    {
-        throw Rs485ConnectionException(
-            "The RS-485 service is not connected"
-        );
-    }
-
-    if (!callback)
-    {
-        throw Rs485ValidationException(
-            "No receive callback was provided"
-        );
-    }
-
-    subscriber_->start(
-        stub_.get(),
-        std::move(callback)
-    );
+    response->set_success(false);
+    response->set_channel_id(channel_id);
+    response->set_error_code(error_code);
+    response->set_error_message(error_message);
 }
 
-void Rs485Service::stopSubscribe()
+}
+
+Rs485ServiceImpl::Rs485ServiceImpl(
+    std::shared_ptr<Rs485DriverClient> driver_client)
+    : driver_client_{
+          std::move(driver_client)
+      }
 {
-    if (subscriber_)
+    if (!driver_client_)
     {
-        subscriber_->stop();
+        throw std::invalid_argument(
+            "The RS-485 driver client is null"
+        );
     }
+}
+
+grpc::Status Rs485ServiceImpl::SendData(
+    grpc::ServerContext *context,
+    const rs485::service::v1::SendDataRequest *request,
+    rs485::service::v1::SendDataResponse *response)
+{
+    static_cast<void>(context);
+
+    if (request == nullptr || response == nullptr)
+    {
+        return grpc::Status{
+            grpc::StatusCode::INTERNAL,
+            "Invalid SendData request objects"
+        };
+    }
+
+    const uint32_t channel_id =
+        request->channel_id();
+
+    try
+    {
+        if (request->data().empty())
+        {
+            throw Rs485ValidationException(
+                "The data field is empty"
+            );
+        }
+
+        const std::string bytes_text =
+            bytesToHexText(request->data());
+
+        const SendDataResult result =
+            driver_client_->sendData(
+                channel_id,
+                bytes_text
+            );
+
+        response->set_success(result.success);
+        response->set_channel_id(result.channel_id);
+        response->set_error_code(
+            rs485::service::v1::NO_ERROR
+        );
+        response->set_error_message(
+            result.error_message
+        );
+
+        return grpc::Status::OK;
+    }
+    catch (const Rs485ValidationException &exception)
+    {
+        fillErrorResponse(
+            response,
+            channel_id,
+            rs485::service::v1::INVALID_DATA,
+            exception.what()
+        );
+    }
+    catch (const Rs485ConnectionException &exception)
+    {
+        fillErrorResponse(
+            response,
+            channel_id,
+            rs485::service::v1::DRIVER_NOT_CONNECTED,
+            exception.what()
+        );
+    }
+    catch (const Rs485DriverException &exception)
+    {
+        fillErrorResponse(
+            response,
+            channel_id,
+            rs485::service::v1::DRIVER_ERROR,
+            exception.what()
+        );
+    }
+    catch (const Rs485GrpcException &exception)
+    {
+        fillErrorResponse(
+            response,
+            channel_id,
+            rs485::service::v1::DRIVER_ERROR,
+            exception.what()
+        );
+    }
+    catch (const Rs485StreamException &exception)
+    {
+        fillErrorResponse(
+            response,
+            channel_id,
+            rs485::service::v1::DRIVER_ERROR,
+            exception.what()
+        );
+    }
+    catch (const std::exception &exception)
+    {
+        fillErrorResponse(
+            response,
+            channel_id,
+            rs485::service::v1::INTERNAL_ERROR,
+            exception.what()
+        );
+    }
+    catch (...)
+    {
+        fillErrorResponse(
+            response,
+            channel_id,
+            rs485::service::v1::INTERNAL_ERROR,
+            "Unknown internal RS-485 service error"
+        );
+    }
+
+    return grpc::Status::OK;
+}
+
+grpc::Status Rs485ServiceImpl::Subscribe(
+    grpc::ServerContext *context,
+    const rs485::service::v1::SubscribeRequest *request,
+    grpc::ServerWriter<
+        rs485::service::v1::ReceiveDataResponse
+    > *writer)
+{
+    static_cast<void>(request);
+
+    if (context == nullptr || writer == nullptr)
+    {
+        return grpc::Status{
+            grpc::StatusCode::INTERNAL,
+            "Invalid Subscribe request objects"
+        };
+    }
+
+    std::mutex queue_mutex;
+    std::condition_variable queue_condition;
+    std::deque<ReceiveDataResult> result_queue;
+
+    bool accepting_results = true;
+
+    const auto callback =
+        [&queue_mutex,
+         &queue_condition,
+         &result_queue,
+         &accepting_results](
+            const ReceiveDataResult &result)
+        {
+            {
+                std::lock_guard<std::mutex> lock{
+                    queue_mutex
+                };
+
+                if (!accepting_results)
+                {
+                    return;
+                }
+
+                result_queue.push_back(result);
+            }
+
+            queue_condition.notify_one();
+        };
+
+    try
+    {
+        driver_client_->startSubscribe(callback);
+    }
+    catch (const Rs485ConnectionException &exception)
+    {
+        return grpc::Status{
+            grpc::StatusCode::UNAVAILABLE,
+            exception.what()
+        };
+    }
+    catch (const Rs485ValidationException &exception)
+    {
+        return grpc::Status{
+            grpc::StatusCode::INVALID_ARGUMENT,
+            exception.what()
+        };
+    }
+    catch (const Rs485Exception &exception)
+    {
+        return grpc::Status{
+            grpc::StatusCode::INTERNAL,
+            exception.what()
+        };
+    }
+    catch (const std::exception &exception)
+    {
+        return grpc::Status{
+            grpc::StatusCode::INTERNAL,
+            exception.what()
+        };
+    }
+    catch (...)
+    {
+        return grpc::Status{
+            grpc::StatusCode::INTERNAL,
+            "Unknown RS-485 subscription error"
+        };
+    }
+
+    grpc::Status result_status = grpc::Status::OK;
+
+    try
+    {
+        while (!context->IsCancelled())
+        {
+            ReceiveDataResult result;
+
+            {
+                std::unique_lock<std::mutex> lock{
+                    queue_mutex
+                };
+
+                queue_condition.wait_for(
+                    lock,
+                    std::chrono::milliseconds{100},
+                    [&result_queue, context]()
+                    {
+                        return !result_queue.empty() ||
+                               context->IsCancelled();
+                    }
+                );
+
+                if (context->IsCancelled())
+                {
+                    break;
+                }
+
+                if (result_queue.empty())
+                {
+                    continue;
+                }
+
+                result = std::move(
+                    result_queue.front()
+                );
+
+                result_queue.pop_front();
+            }
+
+            rs485::service::v1::ReceiveDataResponse
+                response;
+
+            response.set_success(result.success);
+            response.set_channel_id(
+                result.channel_id
+            );
+
+            std::string raw_data;
+
+            for (const ReceiveDataPacket &packet :
+                result.packets)
+            {
+                raw_data.append(
+                    reinterpret_cast<const char *>(
+                        packet.bytes.data()
+                    ),
+                    packet.bytes.size()
+                );
+            }
+
+response.set_data(raw_data);
+
+            if (result.success)
+            {
+                response.set_error_code(
+                    rs485::service::v1::NO_ERROR
+                );
+
+                response.set_error_message(
+                    result.error_message
+                );
+            }
+            else
+            {
+                response.set_error_code(
+                    rs485::service::v1::DRIVER_ERROR
+                );
+
+                response.set_error_message(
+                    result.error_message
+                );
+            }
+
+            if (!writer->Write(response))
+            {
+                break;
+            }
+        }
+    }
+    catch (const std::exception &exception)
+    {
+        result_status = grpc::Status{
+            grpc::StatusCode::INTERNAL,
+            exception.what()
+        };
+    }
+    catch (...)
+    {
+        result_status = grpc::Status{
+            grpc::StatusCode::INTERNAL,
+            "Unknown error while sending RS-485 data"
+        };
+    }
+
+    {
+        std::lock_guard<std::mutex> lock{
+            queue_mutex
+        };
+
+        accepting_results = false;
+    }
+
+    queue_condition.notify_all();
+
+    try
+    {
+        driver_client_->stopSubscribe();
+    }
+    catch (const std::exception &exception)
+    {
+        if (result_status.ok() &&
+            !context->IsCancelled())
+        {
+            result_status = grpc::Status{
+                grpc::StatusCode::INTERNAL,
+                exception.what()
+            };
+        }
+    }
+    catch (...)
+    {
+        if (result_status.ok() &&
+            !context->IsCancelled())
+        {
+            result_status = grpc::Status{
+                grpc::StatusCode::INTERNAL,
+                "Failed to stop RS-485 subscription"
+            };
+        }
+    }
+
+    return result_status;
 }
