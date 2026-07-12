@@ -1,6 +1,6 @@
 import enum
 import pku_service_pb2
-from conversion import connection_check_converter
+from conversion import standard_response_to_command_response
 from executors import executor
 from executors.errors import connection_check_executor_call_error
 from executors.errors import connection_check_executor_conversion_error
@@ -17,7 +17,9 @@ class ConnectionCheckExecutor(executor.Executor[str, pku_service_pb2.CommandResp
         CONNECTION_CHECK = 1
 
     converter_solution: solution.Solution[converter.Converter, Converters] = solution.Solution({
-        Converters.CONNECTION_CHECK: lambda: simple_creator.SimpleCreator(connection_check_converter.ConnectionCheckConverter)
+        Converters.CONNECTION_CHECK: lambda: simple_creator.SimpleCreator(
+            standard_response_to_command_response.StandardResponseToCommandResponse
+        )
     })
 
     caller: driver_caller.DriverCaller
@@ -29,7 +31,7 @@ class ConnectionCheckExecutor(executor.Executor[str, pku_service_pb2.CommandResp
         try:
             return self.converter_solution.make(
                 self.Converters.CONNECTION_CHECK
-            ).create().convert_to_destination(self.caller.check_connection())
+            ).create().convert(self.caller.check_connection())
         except driver_caller_error.DriverCallerError as exception:
             raise connection_check_executor_call_error.ConnectionCheckExecutorCallError(
                 str(exception), exception.get_first_error(), exception.get_data()

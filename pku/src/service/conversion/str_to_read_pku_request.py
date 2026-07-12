@@ -1,0 +1,25 @@
+import typing
+import pku_driver_pb2
+from conversion import converter
+from conversion.errors import str_to_read_pku_request_no_parameter_error
+from conversion.errors import str_to_read_pku_request_index_error
+
+
+class StrToReadPkuRequest(converter.Converter[str, pku_driver_pb2.ReadPkuRequest]):
+    DELIMITER: str = ";"
+
+    def convert(self, source: str) -> pku_driver_pb2.ReadPkuRequest:
+        destination: pku_driver_pb2.ReadPkuRequest = pku_driver_pb2.ReadPkuRequest()
+        parameters: typing.List[str] = source.split(self.DELIMITER)
+        try:
+            destination.indices.extend([int(parameters[index]) for index in range(len(parameters) - 1)])
+            destination.operation_id = parameters[-1]
+        except ValueError as exception:
+            raise str_to_read_pku_request_index_error.StrToReadPkuRequestIndexError(
+                "Incorrect index", str_to_read_pku_request_index_error.StrToReadPkuRequestIndexError
+            ) from exception
+        except IndexError as exception:
+            raise str_to_read_pku_request_no_parameter_error.StrToReadPkuRequestNoParameterError(
+                "No parameters", str_to_read_pku_request_no_parameter_error.StrToReadPkuRequestNoParameterError
+            ) from exception
+        return destination
