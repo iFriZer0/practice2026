@@ -19,15 +19,27 @@ public:
     Rs485Service();
     ~Rs485Service();
 
-    Rs485Service(const Rs485Service &other) = delete;
-    Rs485Service(Rs485Service &&other) = delete;
+    Rs485Service(
+        const Rs485Service &other
+    ) = delete;
 
-    Rs485Service &operator=(const Rs485Service &other) = delete;
-    Rs485Service &operator=(Rs485Service &&other) = delete;
+    Rs485Service(
+        Rs485Service &&other
+    ) = delete;
 
-    bool connect(const std::string &endpoint);
+    Rs485Service &operator=(
+        const Rs485Service &other
+    ) = delete;
 
-    bool isConnected() const;
+    Rs485Service &operator=(
+        Rs485Service &&other
+    ) = delete;
+
+    bool connect(
+        const std::string &endpoint
+    );
+
+    bool isConnected() const noexcept;
 
     SendDataResult sendData(
         uint32_t channel_id,
@@ -35,7 +47,9 @@ public:
     );
 
     void startSubscribe(
-        std::function<void(const ReceiveDataResult &)> callback
+        std::function<
+            void(const ReceiveDataResult &)
+        > callback
     );
 
     void stopSubscribe();

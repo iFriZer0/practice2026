@@ -6,8 +6,8 @@
 #include <memory>
 #include <thread>
 
-#include <grpcpp/grpcpp.h>
 #include <google/protobuf/empty.pb.h>
+#include <grpcpp/grpcpp.h>
 
 #include "../driver/rs485_driver.grpc.pb.h"
 #include "rs485_types.h"
@@ -15,28 +15,48 @@
 class Rs485Subscriber
 {
 public:
-    using Stub = rs485::driver::v1::Rs485Driver::Stub;
+    using Stub =
+        rs485::driver::v1::Rs485Driver::Stub;
+
+    using Callback =
+        std::function<
+            void(const ReceiveDataResult &)
+        >;
 
     Rs485Subscriber();
     ~Rs485Subscriber();
 
-    Rs485Subscriber(const Rs485Subscriber &other) = delete;
-    Rs485Subscriber(Rs485Subscriber &&other) = delete;
+    Rs485Subscriber(
+        const Rs485Subscriber &other
+    ) = delete;
 
-    Rs485Subscriber &operator=(const Rs485Subscriber &other) = delete;
-    Rs485Subscriber &operator=(Rs485Subscriber &&other) = delete;
+    Rs485Subscriber(
+        Rs485Subscriber &&other
+    ) = delete;
+
+    Rs485Subscriber &operator=(
+        const Rs485Subscriber &other
+    ) = delete;
+
+    Rs485Subscriber &operator=(
+        Rs485Subscriber &&other
+    ) = delete;
 
     void start(
         Stub *stub,
-        std::function<void(const ReceiveDataResult &)> callback
+        Callback callback
     );
 
     void stop();
 
-    bool isRunning() const;
+    bool isRunning() const noexcept;
 
 private:
     void receiveLoop();
+
+    void notify(
+        const ReceiveDataResult &result
+    ) noexcept;
 
     Stub *stub_{nullptr};
 
@@ -46,7 +66,7 @@ private:
 
     std::atomic_bool running_{false};
 
-    std::function<void(const ReceiveDataResult &)> callback_;
+    Callback callback_;
 };
 
 #endif

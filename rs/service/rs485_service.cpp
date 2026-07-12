@@ -4,23 +4,26 @@
 #include "rs485_subscriber.h"
 #include "rs485_utils.h"
 
-#include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 
 Rs485Service::Rs485Service()
-    : subscriber_(std::make_unique<Rs485Subscriber>())
+    : subscriber_{
+          std::make_unique<Rs485Subscriber>()
+      }
 {
 }
 
 Rs485Service::~Rs485Service() = default;
 
-bool Rs485Service::connect(const std::string &endpoint)
+bool Rs485Service::connect(
+    const std::string &endpoint)
 {
     if (endpoint.empty())
     {
-        throw std::invalid_argument(
-            clientErrorToString(ClientError::InvalidEndpoint)
+        throw Rs485ValidationException(
+            "The RS-485 driver endpoint is empty"
         );
     }
 
@@ -33,76 +36,57 @@ bool Rs485Service::connect(const std::string &endpoint)
         grpc::InsecureChannelCredentials()
     );
 
-    stub_ =
-        rs485::driver::v1::Rs485Driver::NewStub(channel_);
+    if (!channel_)
+    {
+        throw Rs485ConnectionException(
+            "Failed to create the gRPC channel"
+        );
+    }
 
-    return isConnected();
+    stub_ =
+        rs485::driver::v1::Rs485Driver::NewStub(
+            channel_
+        );
+
+    if (!stub_)
+    {
+        channel_.reset();
+
+        throw Rs485ConnectionException(
+            "Failed to create the RS-485 gRPC stub"
+        );
+    }
+
+    return true;
 }
 
-bool Rs485Service::isConnected() const
+bool Rs485Service::isConnected() const noexcept
 {
-    return channel_ != nullptr && stub_ != nullptr;
+    return static_cast<bool>(stub_);
 }
 
 SendDataResult Rs485Service::sendData(
     uint32_t channel_id,
     const std::string &bytes_text)
 {
-    SendDataResult result;
-    result.channel_id = channel_id;
-
     if (!isConnected())
     {
-        result.success = false;
-        result.error_message =
-            clientErrorToString(ClientError::NotConnected);
-
-        return result;
+        throw Rs485ConnectionException(
+            "The RS-485 service is not connected"
+        );
     }
 
-    if (bytes_text.empty())
-    {
-        result.success = false;
-        result.error_message =
-            clientErrorToString(ClientError::EmptyData);
-
-        return result;
-    }
-
-    std::vector<uint8_t> bytes;
-
-    try
-    {
-        bytes = parseBytes(bytes_text);
-    }
-    catch (const std::invalid_argument &)
-    {
-        result.success = false;
-        result.error_message =
-            clientErrorToString(ClientError::InvalidHex);
-
-        return result;
-    }
-    catch (const std::out_of_range &)
-    {
-        result.success = false;
-        result.error_message =
-            clientErrorToString(ClientError::InvalidHex);
-
-        return result;
-    }
-
-    if (bytes.empty())
-    {
-        result.success = false;
-        result.error_message =
-            clientErrorToString(ClientError::EmptyData);
-
-        return result;
-    }
+    /*
+     * parseBytes() самостоятельно бросит
+     * Rs485ValidationException при неверных данных.
+     */
+    const std::vector<uint8_t> bytes =
+        parseBytes(bytes_text);
 
     const std::string raw_data(
-        reinterpret_cast<const char *>(bytes.data()),
+        reinterpret_cast<const char *>(
+            bytes.data()
+        ),
         bytes.size()
     );
 
@@ -112,13 +96,9 @@ SendDataResult Rs485Service::sendData(
 
     if (!stream)
     {
-        result.success = false;
-        result.error_message =
-            clientErrorToString(
-                ClientError::StreamCreationFailed
-            );
-
-        return result;
+        throw Rs485StreamException(
+            "Failed to create the SendData gRPC stream"
+        );
     }
 
     rs485::driver::v1::SendDataRequest request;
@@ -130,24 +110,18 @@ SendDataResult Rs485Service::sendData(
     {
         stream->WritesDone();
 
-        const grpc::Status status = stream->Finish();
-
-        result.success = false;
+        const grpc::Status status =
+            stream->Finish();
 
         if (!status.ok())
         {
-            result.error_message =
-                grpcStatusToString(status);
-        }
-        else
-        {
-            result.error_message =
-                clientErrorToString(
-                    ClientError::StreamWriteFailed
-                );
+            throw Rs485GrpcException(status);
         }
 
-        return result;
+        throw Rs485StreamException(
+            "Failed to write SendDataRequest "
+            "to the gRPC stream"
+        );
     }
 
     stream->WritesDone();
@@ -157,48 +131,56 @@ SendDataResult Rs485Service::sendData(
     const bool response_received =
         stream->Read(&response);
 
-    const grpc::Status status = stream->Finish();
+    const grpc::Status status =
+        stream->Finish();
 
     if (!status.ok())
     {
-        result.success = false;
-        result.error_message =
-            grpcStatusToString(status);
-
-        return result;
+        throw Rs485GrpcException(status);
     }
 
     if (!response_received)
     {
-        result.success = false;
-        result.error_message =
-            clientErrorToString(ClientError::NoResponse);
-
-        return result;
+        throw Rs485StreamException(
+            "The RS-485 driver did not return "
+            "a SendData response"
+        );
     }
 
-    result.success = response.success();
+    if (!response.success() ||
+        response.error_message() !=
+            rs485::driver::v1::NO_ERROR)
+    {
+        throw Rs485DriverException(
+            response.error_message()
+        );
+    }
+
+    SendDataResult result;
+
+    result.success = true;
     result.channel_id = response.channel_id();
-    result.error_message =
-        pultErrorToString(response.error_message());
+    result.error_message.clear();
 
     return result;
 }
 
 void Rs485Service::startSubscribe(
-    std::function<void(const ReceiveDataResult &)> callback)
+    std::function<
+        void(const ReceiveDataResult &)
+    > callback)
 {
     if (!isConnected())
     {
-        throw std::runtime_error(
-            clientErrorToString(ClientError::NotConnected)
+        throw Rs485ConnectionException(
+            "The RS-485 service is not connected"
         );
     }
 
     if (!callback)
     {
-        throw std::invalid_argument(
-            clientErrorToString(ClientError::EmptyCallback)
+        throw Rs485ValidationException(
+            "No receive callback was provided"
         );
     }
 
