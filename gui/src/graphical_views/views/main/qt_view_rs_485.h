@@ -2,6 +2,7 @@
 #define VIEW_RS_485_H__
 
 #include <memory>
+#include <vector>
 
 #include <QLabel>
 #include <QLineEdit>
@@ -15,7 +16,7 @@
 
 #include "view.h"
 
-#include "rs485_service.h"
+#include "rs485_microservice_client.h"
 
 class QtViewRS485 : public View
 {
@@ -50,7 +51,8 @@ private:
     QWidget *central_widget{nullptr};
     QStackedWidget *stacked_widget{nullptr};
 
-    std::shared_ptr<Rs485Service> rs485_service_;
+    std::shared_ptr<Rs485MicroserviceClient>
+        rs485_client_;
 
     QLineEdit *driver_endpoint_input{nullptr};
     QPushButton *connect_button{nullptr};
@@ -91,7 +93,7 @@ private:
     void on_subscribe_clicked();
 
     void handle_received_data(
-        const ReceiveDataResult &result
+        const Rs485ReceiveResult &result
     );
 
     void append_sent_log(
@@ -102,8 +104,8 @@ private:
         const QString &text
     );
 
-    static QString packet_to_hex(
-        const ReceiveDataPacket &packet
+    static QString bytes_to_hex(
+        const std::vector<uint8_t> &bytes
     );
 };
 

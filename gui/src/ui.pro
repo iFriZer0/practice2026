@@ -1,9 +1,12 @@
 QT += core gui widgets
 
 CONFIG += c++20
-CONFIG += link_pkgconfig
 
-PKGCONFIG += grpc++ protobuf
+GRPC_CFLAGS = $$system(pkg-config --cflags grpc++ protobuf)
+GRPC_LIBS = $$system(pkg-config --static --libs grpc++ protobuf)
+
+QMAKE_CXXFLAGS += $$GRPC_CFLAGS
+LIBS += $$GRPC_LIBS
 
 QMAKE_CXXFLAGS += \
     -Wall \
@@ -12,6 +15,42 @@ QMAKE_CXXFLAGS += \
     -Wextra \
     -Wfloat-conversion \
     -Wfloat-equal
+
+RS485_ROOT_DIR = $$clean_path($$PWD/../../rs)
+RS485_CLIENT_DIR = $$clean_path($$RS485_ROOT_DIR/client)
+RS485_GENERATED_DIR = $$clean_path($$RS485_ROOT_DIR/build/gui_generated)
+RS485_GENERATE_SCRIPT = $$clean_path($$RS485_ROOT_DIR/scripts/generate_gui_proto.sh)
+
+!exists($$RS485_GENERATE_SCRIPT) {
+    error("RS-485 proto generation script was not found: $$RS485_GENERATE_SCRIPT")
+}
+
+RS485_GENERATION_RESULT = $$system($$RS485_GENERATE_SCRIPT)
+
+isEmpty(RS485_GENERATION_RESULT) {
+    error("Failed to generate RS-485 microservice gRPC files")
+}
+
+RS485_SERVICE_PROTO_SOURCE = $$RS485_GENERATED_DIR/rs485_service.pb.cc
+RS485_SERVICE_GRPC_SOURCE = $$RS485_GENERATED_DIR/rs485_service.grpc.pb.cc
+RS485_SERVICE_PROTO_HEADER = $$RS485_GENERATED_DIR/rs485_service.pb.h
+RS485_SERVICE_GRPC_HEADER = $$RS485_GENERATED_DIR/rs485_service.grpc.pb.h
+
+!exists($$RS485_SERVICE_PROTO_SOURCE) {
+    error("Generated file was not found: $$RS485_SERVICE_PROTO_SOURCE")
+}
+
+!exists($$RS485_SERVICE_GRPC_SOURCE) {
+    error("Generated file was not found: $$RS485_SERVICE_GRPC_SOURCE")
+}
+
+!exists($$RS485_SERVICE_PROTO_HEADER) {
+    error("Generated file was not found: $$RS485_SERVICE_PROTO_HEADER")
+}
+
+!exists($$RS485_SERVICE_GRPC_HEADER) {
+    error("Generated file was not found: $$RS485_SERVICE_GRPC_HEADER")
+}
 
 INCLUDEPATH += \
     graphical_views \
@@ -24,8 +63,12 @@ INCLUDEPATH += \
     application \
     application/factory \
     application/factory/errors \
-    ../../rs/service \
-    ../../rs/driver
+    $$RS485_CLIENT_DIR \
+    $$RS485_GENERATED_DIR
+
+DEPENDPATH += \
+    $$RS485_CLIENT_DIR \
+    $$RS485_GENERATED_DIR
 
 SOURCES += \
     application/application.cpp \
@@ -50,12 +93,9 @@ SOURCES += \
     graphical_views/views/main/qt_view_pku.cpp \
     graphical_views/views/main/qt_view_rs_485.cpp \
     graphical_views/widgets/main_window.cpp \
-    ../../rs/service/rs485_service.cpp \
-    ../../rs/service/rs485_subscriber.cpp \
-    ../../rs/service/rs485_utils.cpp \
-    ../../rs/service/rs485_errors.cpp \
-    ../../rs/driver/rs485_driver.pb.cc \
-    ../../rs/driver/rs485_driver.grpc.pb.cc \
+    $$RS485_CLIENT_DIR/rs485_microservice_client.cpp \
+    $$RS485_SERVICE_PROTO_SOURCE \
+    $$RS485_SERVICE_GRPC_SOURCE \
     main.cpp
 
 HEADERS += \
@@ -93,21 +133,25 @@ HEADERS += \
     graphical_views/views/main/qt_view_rs_485.h \
     graphical_views/views/main/view.h \
     graphical_views/widgets/main_window.h \
-    ../../rs/service/rs485_service.h \
-    ../../rs/service/rs485_subscriber.h \
-    ../../rs/service/rs485_utils.h \
-    ../../rs/service/rs485_errors.h \
-    ../../rs/service/rs485_types.h \
-    ../../rs/driver/rs485_driver.pb.h \
-    ../../rs/driver/rs485_driver.grpc.pb.h
+    $$RS485_CLIENT_DIR/rs485_gui_types.h \
+    $$RS485_CLIENT_DIR/rs485_microservice_client.h \
+    $$RS485_SERVICE_PROTO_HEADER \
+    $$RS485_SERVICE_GRPC_HEADER
 
-# Default rules for deployment.
-qnx: target.path = /tmp/$${TARGET}/bin
-else: unix:!android: target.path = /opt/$${TARGET}/bin
-!isEmpty(target.path): INSTALLS += target
+qnx {
+    target.path = /tmp/$${TARGET}/bin
+} else: unix:!android {
+    target.path = /opt/$${TARGET}/bin
+}
+
+!isEmpty(target.path) {
+    INSTALLS += target
+}
 
 DISTFILES += \
-    .clangd
+    .clangd \
+    $$RS485_ROOT_DIR/api/rs485_service.proto \
+    $$RS485_GENERATE_SCRIPT
 
 DESTDIR = $$PWD/build/out
 OBJECTS_DIR = $$PWD/build/obj

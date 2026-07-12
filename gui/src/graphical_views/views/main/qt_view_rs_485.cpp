@@ -12,8 +12,10 @@ QtViewRS485::QtViewRS485(
     QStackedWidget *const stacked_widget
 )
     : stacked_widget{stacked_widget},
-      rs485_service_{
-          std::make_shared<Rs485Service>()
+      rs485_client_{
+          std::make_shared<
+              Rs485MicroserviceClient
+          >()
       }
 {
     central_widget = create_widget();
@@ -22,9 +24,9 @@ QtViewRS485::QtViewRS485(
 
 QtViewRS485::~QtViewRS485()
 {
-    if (rs485_service_)
+    if (rs485_client_)
     {
-        rs485_service_->stopSubscribe();
+        rs485_client_->disconnect();
     }
 }
 
@@ -53,12 +55,9 @@ void QtViewRS485::setup_ui()
         create_label("RS-485")
     );
 
-    /*
-     * Подключение
-     */
     QGroupBox *connection_group =
         new QGroupBox(
-            "Подключение к RS-485 драйверу",
+            "Подключение к RS-485 микросервису",
             central_widget
         );
 
@@ -73,7 +72,7 @@ void QtViewRS485::setup_ui()
         new QLineEdit(connection_group);
 
     driver_endpoint_input->setText(
-        "127.0.0.1:50051"
+        "127.0.0.1:50052"
     );
 
     connection_layout->addWidget(
@@ -94,9 +93,6 @@ void QtViewRS485::setup_ui()
         connection_group
     );
 
-    /*
-     * SendData
-     */
     QGroupBox *send_group =
         new QGroupBox(
             "Отправка данных SendData",
@@ -165,9 +161,6 @@ void QtViewRS485::setup_ui()
         send_group
     );
 
-    /*
-     * Subscribe
-     */
     QGroupBox *subscribe_group =
         new QGroupBox(
             "Прием данных Subscribe",
@@ -190,6 +183,7 @@ void QtViewRS485::setup_ui()
     main_layout->addWidget(
         subscribe_group
     );
+
     QHBoxLayout *logs_layout =
         new QHBoxLayout();
 
@@ -245,7 +239,7 @@ void QtViewRS485::setup_ui()
 
     status_label =
         create_label(
-            "Статус: клиент не инициализирован"
+            "Статус: микросервис не подключен"
         );
 
     main_layout->addWidget(
@@ -299,17 +293,17 @@ void QtViewRS485::on_connect_clicked()
 
     try
     {
-        const bool initialized =
-            rs485_service_->connect(
+        const bool connected =
+            rs485_client_->connect(
                 endpoint.toStdString()
             );
 
-        if (initialized)
+        if (connected)
         {
             set_driver_controls_enabled(true);
 
             status_label->setText(
-                "Статус: gRPC-клиент инициализирован для "
+                "Статус: подключено к микросервису "
                 + endpoint
             );
         }
@@ -318,8 +312,8 @@ void QtViewRS485::on_connect_clicked()
             set_driver_controls_enabled(false);
 
             status_label->setText(
-                "Статус: не удалось инициализировать "
-                "gRPC-клиент"
+                "Статус: не удалось подключиться "
+                "к микросервису"
             );
         }
     }
@@ -344,12 +338,12 @@ void QtViewRS485::on_send_clicked()
         );
 
     const QString bytes_text =
-        bytes_input->text();
+        bytes_input->text().trimmed();
 
     try
     {
-        const SendDataResult result =
-            rs485_service_->sendData(
+        const Rs485SendResult result =
+            rs485_client_->sendData(
                 channel_id,
                 bytes_text.toStdString()
             );
@@ -422,9 +416,9 @@ void QtViewRS485::on_subscribe_clicked()
     {
         try
         {
-            rs485_service_->startSubscribe(
+            rs485_client_->startSubscribe(
                 [this](
-                    const ReceiveDataResult &result
+                    const Rs485ReceiveResult &result
                 )
                 {
                     QMetaObject::invokeMethod(
@@ -471,7 +465,7 @@ void QtViewRS485::on_subscribe_clicked()
     {
         try
         {
-            rs485_service_->stopSubscribe();
+            rs485_client_->stopSubscribe();
 
             subscribed = false;
 
@@ -500,7 +494,7 @@ void QtViewRS485::on_subscribe_clicked()
 }
 
 void QtViewRS485::handle_received_data(
-    const ReceiveDataResult &result
+    const Rs485ReceiveResult &result
 )
 {
     QString log_entry;
@@ -514,18 +508,10 @@ void QtViewRS485::handle_received_data(
     log_entry +=
         result.success ? "true" : "false";
 
-    for (std::size_t index = 0;
-         index < result.packets.size();
-         ++index)
-    {
-        log_entry += "\npacket[";
-        log_entry += QString::number(index);
-        log_entry += "]: ";
-
-        log_entry += packet_to_hex(
-            result.packets[index]
-        );
-    }
+    log_entry += "\ndata: ";
+    log_entry += bytes_to_hex(
+        result.data
+    );
 
     log_entry += "\nmessage: ";
     log_entry += QString::fromStdString(
@@ -553,26 +539,26 @@ void QtViewRS485::handle_received_data(
     }
 }
 
-QString QtViewRS485::packet_to_hex(
-    const ReceiveDataPacket &packet
+QString QtViewRS485::bytes_to_hex(
+    const std::vector<uint8_t> &bytes
 )
 {
     QString result;
 
     for (std::size_t index = 0;
-         index < packet.bytes.size();
+         index < bytes.size();
          ++index)
     {
         result += QStringLiteral("%1").arg(
             static_cast<unsigned int>(
-                packet.bytes[index]
+                bytes[index]
             ),
             2,
             16,
             QLatin1Char('0')
         ).toUpper();
 
-        if (index + 1 < packet.bytes.size())
+        if (index + 1 < bytes.size())
         {
             result += " ";
         }
