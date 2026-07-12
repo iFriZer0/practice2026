@@ -1,4 +1,0 @@
-/home/alexander/praktica/dev/rs/build/CMakeFiles/rs485_generate_proto.dir
-/home/alexander/praktica/dev/rs/build/CMakeFiles/rs485_microservice.dir
-/home/alexander/praktica/dev/rs/build/CMakeFiles/edit_cache.dir
-/home/alexander/praktica/dev/rs/build/CMakeFiles/rebuild_cache.dir
