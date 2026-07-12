@@ -1,0 +1,5 @@
+from executors.errors import main_information_writing_executor_error
+
+
+class MainInformationWritingExecutorConversionError(main_information_writing_executor_error.MainInformationWritingExecutorError):
+    pass

@@ -5,49 +5,32 @@ import grpc
 import google.protobuf.empty_pb2
 import pku_driver_pb2
 import pku_driver_pb2_grpc
-import decorate_with_logger
-import connecting_driver_caller_ping_error
-import connecting_driver_caller_connection_error
+from application import decorate_with_logger
 from calls import driver_caller
-
-
-class ResponseProtocol(typing.Protocol):
-    success: bool
-    error_message: str
-
+from calls.errors import connecting_driver_caller_connection_error
+from calls.errors import connecting_driver_caller_ping_error
 
 Parameters = typing.ParamSpec("Parameters")
-Response = typing.TypeVar("Response", bound=ResponseProtocol)
+Response = typing.TypeVar("Response")
 
 
 @decorate_with_logger.decorate_with_logger
 class ConnectingDriverCaller(driver_caller.DriverCaller):
-    ip: str
-    port: str
     channel: grpc.Channel
     stub: pku_driver_pb2_grpc.PkuDriverStub
-    connected: bool
 
     TIMEOUT: int = 3
 
     logger: logging.Logger
 
     def __init__(self, ip: str, port: str) -> None:
-        self.ip = ip
-        self.port = port
-        self.connected = False
-
-    def __enter__(self) -> "ConnectingDriverCaller":
-        self.channel = grpc.insecure_channel(self.ip + ":" + self.port)
+        self.channel = grpc.insecure_channel(ip + ":" + port)
         self.__ping()
         self.stub = pku_driver_pb2_grpc.PkuDriverStub(self.channel)
-        self.connected = True
         self.logger.info("Connection was established.")
-        return self
 
-    def __exit__(self, exc_type: typing.Any, exc_val: typing.Any, exc_tb: typing.Any) -> None:
+    def __del__(self) -> None:
         self.channel.close()
-        self.connected = False
         self.logger.info("Connection was broken.")
 
     @staticmethod
@@ -61,20 +44,13 @@ class ConnectingDriverCaller(driver_caller.DriverCaller):
             input_function: collections.abc.Callable[typing.Concatenate["ConnectingDriverCaller", Parameters], Response]
         ) -> collections.abc.Callable[typing.Concatenate["ConnectingDriverCaller", Parameters], Response]:
             def output_function(self: "ConnectingDriverCaller", *args: Parameters.args, **kwargs: Parameters.kwargs) -> Response:
-                response: Response = response_type()
-                if self.connected:
-                    try:
-                        response = input_function(self, *args, **kwargs)
-                    except grpc.RpcError as exception:
-                        self.connected = False
-                        self.logger.error("Connection was lost before the call.")
-                        raise connecting_driver_caller_connection_error.ConnectingDriverCallerConnectionError(
-                            "Connection is lost.", connecting_driver_caller_connection_error.ConnectingDriverCallerConnectionError
-                        ) from exception
-                else:
-                    response.success = False
-                    response.error_message = "ConnectingDriverCaller is not connected."
-                return response
+                try:
+                    return input_function(self, *args, **kwargs)
+                except grpc.RpcError as exception:
+                    self.logger.error("Connection was lost before the call.")
+                    raise connecting_driver_caller_connection_error.ConnectingDriverCallerConnectionError(
+                        "Connection is lost", connecting_driver_caller_connection_error.ConnectingDriverCallerConnectionError
+                    ) from exception
             return output_function
         return call_with_connection_check
 
@@ -106,13 +82,9 @@ class ConnectingDriverCaller(driver_caller.DriverCaller):
     def send_rk_by_index(self, request: pku_driver_pb2.SendRkByIndexRequest) -> pku_driver_pb2.StandardResponse:
         return self.stub.SendRkByIndex(request)
 
+    @__decorate_call_with_connection_check(pku_driver_pb2.VersionInfo)
     def get_version(self) -> pku_driver_pb2.VersionInfo:
-        response: pku_driver_pb2.VersionInfo = pku_driver_pb2.VersionInfo()
-        if self.connected:
-            response = self.stub.GetVersion(google.protobuf.empty_pb2.Empty())
-        else:
-            response.version = "ConnectingDriverCaller is not connected."
-        return response
+        return self.stub.GetVersion(google.protobuf.empty_pb2.Empty())
 
     def __ping(self) -> None:
         try:
@@ -120,5 +92,5 @@ class ConnectingDriverCaller(driver_caller.DriverCaller):
         except grpc.FutureTimeoutError as exception:
             self.logger.error("Connection was not established.")
             raise connecting_driver_caller_ping_error.ConnectingDriverCallerPingError(
-                "Connection was not established.", connecting_driver_caller_ping_error.ConnectingDriverCallerPingError
+                "Connection was not established", connecting_driver_caller_ping_error.ConnectingDriverCallerPingError
             ) from exception

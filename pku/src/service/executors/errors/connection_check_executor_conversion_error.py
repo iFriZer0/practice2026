@@ -1,0 +1,5 @@
+from executors.errors import connection_check_executor_error
+
+
+class ConnectionCheckExecutorConversionError(connection_check_executor_error.ConnectionCheckExecutorError):
+    pass
