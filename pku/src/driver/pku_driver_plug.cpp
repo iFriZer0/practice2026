@@ -1,4 +1,6 @@
 #include <algorithm>
+#include <array>
+#include <bit>
 #include <charconv>
 #include <cstdint>
 #include <iterator>
@@ -107,6 +109,9 @@ grpc::Status PkuDriverPlug::ReadPku(
         pku::driver::v1::ReadPkuResponse *response
 )
 {
+    response->set_success(true);
+    response->set_error_message("");
+    response->mutable_durations_ms()->Resize(PKU_COUNT, 0);
     std::ranges::for_each(request->indices(), [this, response](const std::uint32_t &index)
     {
         response->set_durations_ms(index - 1, pku_durations_ms[index - 1]);
@@ -120,6 +125,8 @@ grpc::Status PkuDriverPlug::SetPkuMode(
         pku::driver::v1::StandardResponse *response
 )
 {
+    response->set_success(true);
+    response->set_error_message("");
     pku_modes[request->pku_index() - 1] = request->mode();
     return grpc::Status::OK;
 }
@@ -130,6 +137,8 @@ grpc::Status PkuDriverPlug::SendRkByIndex(
         pku::driver::v1::StandardResponse *response
 )
 {
+    response->set_success(true);
+    response->set_error_message("");
     rk_durations_ms[request->rk_index() - 1] = request->duration_ms();
     return grpc::Status::OK;
 }
@@ -149,15 +158,21 @@ std::string PkuDriverPlug::convert_main_information() const
     std::ostringstream stream;
     stream
             << main_information.identifier
-            << main_information.buffer_size
+            << convert_buffer_size(main_information.buffer_size)
             << main_information.description
             << main_information.mac
             << main_information.ip
             << main_information.netmask
             << main_information.gateway
             << main_information.dns
-            << main_information.use_dhcp;
+            << static_cast<char>(main_information.use_dhcp);
     return stream.str();
+}
+
+std::string PkuDriverPlug::convert_buffer_size(const std::uint32_t &buffer_size) const
+{
+    std::array<char, sizeof(std::uint32_t)> bits{std::bit_cast<std::array<char, sizeof(std::uint32_t)>>(buffer_size)};
+    return std::string{bits.begin(), bits.end()};
 }
 
 std::string PkuDriverPlug::convert_mac(const std::string &mac) const

@@ -94,6 +94,8 @@ private:
 
     std::string convert_main_information() const;
 
+    std::string convert_buffer_size(const std::uint32_t &buffer_size) const;
+
     std::string convert_mac(const std::string &mac) const;
 
     std::string convert_address(const std::string &address) const;

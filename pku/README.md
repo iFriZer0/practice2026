@@ -80,8 +80,8 @@ rmdir build log
 
 Для запуска интеграционных тестов нужно запустить драйвер, микросервис и сами тесты в следующем порядке:
 
-1. ```build/driver```;
-2. ```service/run.sh```;
+1. ```tests/run_driver.sh```;
+2. ```tests/run_service.sh```;
 3. ```tests/run.sh```.
 
 ### Windows
