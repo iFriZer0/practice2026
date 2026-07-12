@@ -807,13 +807,13 @@ QLineEdit *QtViewMKO::create_line_edit(const QString &placeholder) const
     return line_edit;
 }
 
-QSpinBox *QtViewMKO::create_spin_box(int minimum, int maximum, int value) const
+QSpinBox *QtViewMKO::create_spin_box(int /*minimum*/, int /*maximum*/, int value) const
 {
     QSpinBox *spin_box{nullptr};
     try
     {
         spin_box = new QSpinBox{};
-        spin_box->setRange(minimum, maximum);
+        spin_box->setRange(std::numeric_limits<int>::min(), std::numeric_limits<int>::max());
         spin_box->setValue(value);
         spin_box->setProperty("default_value", value);
     }
