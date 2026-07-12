@@ -65,6 +65,7 @@ class Application:
                 level=logging.INFO,
                 filename=cls.LOG_PATH,
                 filemode="a",
+                encoding="utf-8",
                 format="%(asctime)s %(levelname)s: %(name)s.%(funcName)s:  %(message)s"
             )
         except PermissionError:
