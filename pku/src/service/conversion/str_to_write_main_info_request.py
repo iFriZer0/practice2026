@@ -1,9 +1,12 @@
 import typing
+import logging
 import pku_driver_pb2
 from conversion import converter
 from conversion.errors import str_to_write_main_info_request_no_parameter_error
+from application import decorate_with_logger
 
 
+@decorate_with_logger.decorate_with_logger
 class StrToWriteMainInfoRequest(converter.Converter[str, pku_driver_pb2.WriteMainInfoRequest]):
     DESCRIPTION_INDEX: int = 0
     MAC_INDEX: int = 1
@@ -18,6 +21,8 @@ class StrToWriteMainInfoRequest(converter.Converter[str, pku_driver_pb2.WriteMai
 
     TRUE_STRING: str = "1"
 
+    logger: logging.Logger
+
     def convert(self, source: str) -> pku_driver_pb2.WriteMainInfoRequest:
         destination: pku_driver_pb2.WriteMainInfoRequest = pku_driver_pb2.WriteMainInfoRequest()
         parameters: typing.List[str] = source.split(self.DELIMITER)
@@ -31,9 +36,20 @@ class StrToWriteMainInfoRequest(converter.Converter[str, pku_driver_pb2.WriteMai
             destination.use_dhcp = parameters[self.USE_DHCP_INDEX] == "1"
             destination.operation_id = parameters[self.OPERATION_ID_INDEX]
         except IndexError as exception:
+            self.logger.error("Not enough parameters.")
             raise str_to_write_main_info_request_no_parameter_error.StrToWriteMainInfoRequestNoParameterError(
-                "Not enough data",
+                "Not enough parameters",
                 str_to_write_main_info_request_no_parameter_error.StrToWriteMainInfoRequestNoParameterError,
                 source
             ) from exception
+        self.logger.info(
+            f"Description: \"{destination.description:s}\". "
+            f"MAC: \"{destination.mac:s}\". "
+            f"IP: \"{destination.ip:s}\". "
+            f"Netmask: \"{destination.netmask:s}\". "
+            f"Gateway: \"{destination.gateway:s}\". "
+            f"DNS: \"{destination.dns:s}\". "
+            f"DHCP: \"{destination.use_dhcp:b}\". "
+            f"Operation identifier: \"{destination.operation_id:s}\"."
+        )
         return destination

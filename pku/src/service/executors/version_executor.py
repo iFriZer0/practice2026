@@ -1,4 +1,5 @@
 import enum
+import logging
 import pku_service_pb2
 from executors import executor
 from executors.errors import version_executor_call_error
@@ -8,10 +9,12 @@ from calls.errors import driver_caller_error
 from conversion import converter
 from conversion import version_info_to_command_response
 from conversion.errors import converter_error
+from application import decorate_with_logger
 from factory import solution
 from factory import simple_creator
 
 
+@decorate_with_logger.decorate_with_logger
 class VersionExecutor(executor.Executor[str, pku_service_pb2.CommandResponse]):
     class Converters(enum.Enum):
         VERSION_INFO_TO_COMMAND_RESPONSE = 1
@@ -22,6 +25,8 @@ class VersionExecutor(executor.Executor[str, pku_service_pb2.CommandResponse]):
         )
     })
 
+    logger: logging.Logger
+
     caller: driver_caller.DriverCaller
 
     def __init__(self, caller: driver_caller.DriverCaller) -> None:
@@ -29,6 +34,7 @@ class VersionExecutor(executor.Executor[str, pku_service_pb2.CommandResponse]):
 
     def execute(self, data: str) -> pku_service_pb2.CommandResponse:
         try:
+            self.logger.info(f"Parameter \"{data:s}\" received.")
             return self.converter_solution.make(
                 self.Converters.VERSION_INFO_TO_COMMAND_RESPONSE
             ).create().convert(self.caller.get_version())

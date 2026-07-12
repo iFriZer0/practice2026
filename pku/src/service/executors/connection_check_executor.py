@@ -1,4 +1,5 @@
 import enum
+import logging
 import pku_service_pb2
 from executors import executor
 from executors.errors import connection_check_executor_call_error
@@ -8,10 +9,12 @@ from calls.errors import driver_caller_error
 from conversion import converter
 from conversion import standard_response_to_command_response
 from conversion.errors import converter_error
+from application import decorate_with_logger
 from factory import solution
 from factory import simple_creator
 
 
+@decorate_with_logger.decorate_with_logger
 class ConnectionCheckExecutor(executor.Executor[str, pku_service_pb2.CommandResponse]):
     class Converters(enum.Enum):
         STANDARD_RESPONSE_TO_COMMAND_RESPONSE = 1
@@ -22,6 +25,8 @@ class ConnectionCheckExecutor(executor.Executor[str, pku_service_pb2.CommandResp
         )
     })
 
+    logger: logging.Logger
+
     caller: driver_caller.DriverCaller
 
     def __init__(self, caller: driver_caller.DriverCaller) -> None:
@@ -29,6 +34,7 @@ class ConnectionCheckExecutor(executor.Executor[str, pku_service_pb2.CommandResp
 
     def execute(self, data: str) -> pku_service_pb2.CommandResponse:
         try:
+            self.logger.info(f"Parameter \"{data:s}\" received.")
             return self.converter_solution.make(
                 self.Converters.STANDARD_RESPONSE_TO_COMMAND_RESPONSE
             ).create().convert(self.caller.check_connection())

@@ -106,6 +106,7 @@ class CallingPkuService(pku_service_pb2_grpc.MainServiceServicer):
         try:
             command_id: CallingPkuService.Executors = self.Executors(request.command_id)
             response = self.executors[command_id].execute(request.command_param)
+            self.logger.info(f"Command {request.command_id:d} executed.")
         except ValueError:
             response = pku_service_pb2.CommandResponse()
             response.success = False

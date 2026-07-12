@@ -1,9 +1,13 @@
+import logging
+import typing
 import pku_driver_pb2
 import pku_service_pb2
 from conversion import converter
 from conversion.errors import read_memory_response_to_command_response_index_error
+from application import decorate_with_logger
 
 
+@decorate_with_logger.decorate_with_logger
 class ReadMemoryResponseToCommandResponse(converter.Converter[pku_driver_pb2.ReadMemoryResponse, pku_service_pb2.CommandResponse]):
     IDENTIFIER_OFFSET: int = 0
     BUFFER_SIZE_OFFSET: int = 4
@@ -18,7 +22,9 @@ class ReadMemoryResponseToCommandResponse(converter.Converter[pku_driver_pb2.Rea
     DELIMITER: str = ";"
 
     ENCODING: str = "latin1"
-    BYTEORDER: str = "little"
+    BYTEORDER: typing.Literal["little", "big"] = "little"
+
+    logger: logging.Logger
 
     def convert(self, source: pku_driver_pb2.ReadMemoryResponse) -> pku_service_pb2.CommandResponse:
         destination: pku_service_pb2.CommandResponse = pku_service_pb2.CommandResponse()
@@ -40,9 +46,11 @@ class ReadMemoryResponseToCommandResponse(converter.Converter[pku_driver_pb2.Rea
                     str(view[self.USE_DHCP_OFFSET:][0])
                 ])
             except IndexError as exception:
+                self.logger.error("Main information is incomplete.")
                 raise read_memory_response_to_command_response_index_error.ReadMemoryResponseToCommandResponseIndexError(
                     "Main information is incomplete",
                     read_memory_response_to_command_response_index_error.ReadMemoryResponseToCommandResponseIndexError,
                     source.data
                 ) from exception
+        self.logger.info(f"Success: {destination.success:b}. Result: \"{destination.result_text:s}\".")
         return destination
