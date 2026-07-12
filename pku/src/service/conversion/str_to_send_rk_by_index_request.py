@@ -20,7 +20,7 @@ class StrToSendRkByIndexRequest(converter.Converter[str, pku_driver_pb2.SendRkBy
 
     def convert(self, source: str) -> pku_driver_pb2.SendRkByIndexRequest:
         destination: pku_driver_pb2.SendRkByIndexRequest = pku_driver_pb2.SendRkByIndexRequest()
-        parameters: typing.List[str] = destination.split(self.DELIMITER)
+        parameters: typing.List[str] = source.split(self.DELIMITER)
         try:
             destination.rk_index = self.__parse_rk_index(parameters[self.RK_INDEX_INDEX])
             destination.duration_ms = self.__parse_duration_ms(parameters[self.DURATION_MS_INDEX])

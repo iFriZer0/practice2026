@@ -12,7 +12,7 @@ from factory import solution
 from factory import simple_creator
 
 
-class HardwareStatusExecutor(executor.Executor[str, pku_service_pb2.CommandResponse]):
+class VersionExecutor(executor.Executor[str, pku_service_pb2.CommandResponse]):
     class Converters(enum.Enum):
         VERSION_INFO_TO_COMMAND_RESPONSE = 1
 
