@@ -2,6 +2,7 @@
 #define MKO_CLIENT_H__
 
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -97,9 +98,40 @@ struct ClearBufferRequestData
     int32_t index;
 };
 
+struct SubscribeOuCommandsRequestData
+{
+    std::string board_id;
+};
+
+// OuCommandEventData — одно событие входящей команды ОУ из потока
+// SubscribeOuCommands. Поля совпадают с OuCommandEvent из mko.proto.
+struct OuCommandEventData
+{
+    uint32_t cmd_word;
+    uint32_t result_word;
+    bool receive_from_ou;
+    uint32_t ou_address;
+    uint32_t subaddress;
+    uint32_t word_count;
+    std::string decoded_command;
+    std::string decoded_result;
+};
+
 class MkoClient
 {
 public:
+    // Обработчик одного события ОУ, вызывается из фонового потока,
+    // читающего server-streaming RPC SubscribeOuCommands. Вызывающая
+    // сторона (GUI) сама отвечает за то, чтобы попасть в поток GUI,
+    // прежде чем трогать виджеты (см. использование в qt_view_mko.cpp
+    // через QMetaObject::invokeMethod).
+    using OuCommandEventHandler = std::function<void(const OuCommandEventData &)>;
+
+    // Обработчик завершения потока с ошибкой (сервер закрыл поток не
+    // штатно). Не вызывается при штатной отписке через
+    // unsubscribe_ou_commands().
+    using OuSubscriptionErrorHandler = std::function<void(const std::string &)>;
+
     virtual ~MkoClient() = default;
 
     virtual void configure_kk(const ConfigureKKRequestData &request) = 0;
@@ -112,6 +144,20 @@ public:
     virtual void send_raw_ou_data(const WriteOuSubaddressRequestData &request) = 0;
     virtual void clear_receive_buffer(const ClearBufferRequestData &request) = 0;
     virtual void clear_transmit_buffer(const ClearBufferRequestData &request) = 0;
+
+    // Открывает server-streaming RPC SubscribeOuCommands в фоновом
+    // потоке и вызывает on_event на каждое входящее событие, пока
+    // поток не будет закрыт сервером или явно остановлен через
+    // unsubscribe_ou_commands(). Повторный вызов сначала останавливает
+    // предыдущую подписку.
+    virtual void subscribe_ou_commands(const SubscribeOuCommandsRequestData &request,
+                                        OuCommandEventHandler on_event,
+                                        OuSubscriptionErrorHandler on_error) = 0;
+
+    // Останавливает текущую подписку (если есть) и дожидается
+    // завершения фонового потока. Безопасно вызывать, даже если
+    // подписки не было.
+    virtual void unsubscribe_ou_commands() = 0;
 };
 
 #endif

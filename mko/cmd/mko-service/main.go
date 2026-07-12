@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"log/slog"
 	"net"
 	"os"
 	"os/signal"
@@ -48,7 +47,7 @@ func main() {
 	ouDriver := mkodriver.New(driverGrpcClient)
 
 	kkService := logging.NewKKService(service.NewKKService(kkDriver), logger)
-	ouService := service.NewOuService(ouDriver, slog.Default())
+	ouService := logging.NewOuService(service.NewOuService(ouDriver), logger)
 	mkoServer := transport.NewMKOServer(ouService, kkService)
 
 	listener, err := net.Listen("tcp", serviceAddr)

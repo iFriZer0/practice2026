@@ -28,7 +28,8 @@ LIBS += \
     -lprotobuf \
     -lgpr
 
-LIBS += $$system(find /opt/homebrew/lib -maxdepth 1 -name 'libabsl_*.dylib' ! -name '*.2601.*' -print)
+macx: LIBS += $$system(find /opt/homebrew/lib -maxdepth 1 -name 'libabsl_*.dylib' ! -name '*.2601.*' -print)
+linux: LIBS += $$system(find /usr/lib -maxdepth 1 -name 'libabsl_*.so' -print)
 
 SOURCES += \
     application/application.cpp \
