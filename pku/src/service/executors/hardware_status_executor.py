@@ -1,8 +1,8 @@
 import enum
 import pku_service_pb2
 from executors import executor
-from executors.errors import connection_check_executor_call_error
-from executors.errors import connection_check_executor_conversion_error
+from executors.errors import hardware_status_executor_call_error
+from executors.errors import hardware_status_executor_conversion_error
 from calls import driver_caller
 from calls.errors import driver_caller_error
 from conversion import converter
@@ -12,7 +12,7 @@ from factory import solution
 from factory import simple_creator
 
 
-class ConnectionCheckExecutor(executor.Executor[str, pku_service_pb2.CommandResponse]):
+class HardwareStatusExecutor(executor.Executor[str, pku_service_pb2.CommandResponse]):
     class Converters(enum.Enum):
         STANDARD_RESPONSE_TO_COMMAND_RESPONSE = 1
 
@@ -31,12 +31,12 @@ class ConnectionCheckExecutor(executor.Executor[str, pku_service_pb2.CommandResp
         try:
             return self.converter_solution.make(
                 self.Converters.STANDARD_RESPONSE_TO_COMMAND_RESPONSE
-            ).create().convert(self.caller.check_connection())
+            ).create().convert(self.caller.get_hardware_status())
         except driver_caller_error.DriverCallerError as exception:
-            raise connection_check_executor_call_error.ConnectionCheckExecutorCallError(
+            raise hardware_status_executor_call_error.HardwareStatusExecutorCallError(
                 str(exception), exception.get_first_error(), exception.get_data()
             ) from exception
         except converter_error.ConverterError as exception:
-            raise connection_check_executor_conversion_error.ConnectionCheckExecutorConversionError(
+            raise hardware_status_executor_conversion_error.HardwareStatusExecutorConversionError(
                 str(exception), exception.get_first_error(), exception.get_data()
             ) from exception

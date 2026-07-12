@@ -1,24 +1,24 @@
 import enum
 import pku_service_pb2
 from executors import executor
-from executors.errors import connection_check_executor_call_error
-from executors.errors import connection_check_executor_conversion_error
+from executors.errors import version_executor_call_error
+from executors.errors import version_executor_conversion_error
 from calls import driver_caller
 from calls.errors import driver_caller_error
 from conversion import converter
-from conversion import standard_response_to_command_response
+from conversion import version_info_to_command_response
 from conversion.errors import converter_error
 from factory import solution
 from factory import simple_creator
 
 
-class ConnectionCheckExecutor(executor.Executor[str, pku_service_pb2.CommandResponse]):
+class HardwareStatusExecutor(executor.Executor[str, pku_service_pb2.CommandResponse]):
     class Converters(enum.Enum):
-        STANDARD_RESPONSE_TO_COMMAND_RESPONSE = 1
+        VERSION_INFO_TO_COMMAND_RESPONSE = 1
 
     converter_solution: solution.Solution[converter.Converter, Converters] = solution.Solution({
-        Converters.STANDARD_RESPONSE_TO_COMMAND_RESPONSE: lambda: simple_creator.SimpleCreator(
-            standard_response_to_command_response.StandardResponseToCommandResponse
+        Converters.VERSION_INFO_TO_COMMAND_RESPONSE: lambda: simple_creator.SimpleCreator(
+            version_info_to_command_response.VersionInfoToCommandResponse
         )
     })
 
@@ -30,13 +30,13 @@ class ConnectionCheckExecutor(executor.Executor[str, pku_service_pb2.CommandResp
     def execute(self, data: str) -> pku_service_pb2.CommandResponse:
         try:
             return self.converter_solution.make(
-                self.Converters.STANDARD_RESPONSE_TO_COMMAND_RESPONSE
-            ).create().convert(self.caller.check_connection())
+                self.Converters.VERSION_INFO_TO_COMMAND_RESPONSE
+            ).create().convert(self.caller.get_version())
         except driver_caller_error.DriverCallerError as exception:
-            raise connection_check_executor_call_error.ConnectionCheckExecutorCallError(
+            raise version_executor_call_error.VersionExecutorCallError(
                 str(exception), exception.get_first_error(), exception.get_data()
             ) from exception
         except converter_error.ConverterError as exception:
-            raise connection_check_executor_conversion_error.ConnectionCheckExecutorConversionError(
+            raise version_executor_conversion_error.VersionExecutorConversionError(
                 str(exception), exception.get_first_error(), exception.get_data()
             ) from exception
