@@ -13,6 +13,6 @@ std::unique_ptr<View> ViewDirector::create(ViewBuilder &builder) const
     }
     catch (const ViewBuilderError &error)
     {
-        throw ViewDirectorBuildError{error.what(), error.get_first_error(), error.get_data()};
+        throw ViewDirectorBuildError{error.what(), error.get_first_error()};
     }
 }
