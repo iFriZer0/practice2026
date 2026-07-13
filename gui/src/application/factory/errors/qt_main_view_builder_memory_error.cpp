@@ -3,4 +3,9 @@
 #include "view_builder_error.h"
 
 QtMainViewBuilderMemoryError::QtMainViewBuilderMemoryError(const char *const message, const std::type_info &first_error) noexcept
-    : ViewBuilderError(message, first_error, nullptr) {}
+    : ViewBuilderError(message, first_error) {}
+
+const void *QtMainViewBuilderMemoryError::get_data() const noexcept
+{
+    return nullptr;
+}
