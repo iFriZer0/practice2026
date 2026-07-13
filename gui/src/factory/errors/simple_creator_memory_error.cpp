@@ -3,4 +3,9 @@
 #include "simple_creator_error.h"
 
 SimpleCreatorMemoryError::SimpleCreatorMemoryError(const char *const message, const std::type_info &first_error) noexcept
-    : SimpleCreatorError(message, first_error, nullptr) {}
+    : SimpleCreatorError(message, first_error) {}
+
+const void *SimpleCreatorMemoryError::get_data() const noexcept
+{
+    return nullptr;
+}

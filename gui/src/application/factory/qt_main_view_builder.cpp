@@ -28,7 +28,7 @@ std::unique_ptr<View> QtMainViewBuilder::build_view()
     }
     catch (const Error &error)
     {
-        throw QtMainViewBuilderFactoryError{error.what(), error.get_first_error(), error.get_data()};
+        throw QtMainViewBuilderFactoryError{error.what(), error.get_first_error()};
     }
     return view;
 }
