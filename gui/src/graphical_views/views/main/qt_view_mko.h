@@ -73,9 +73,23 @@ private:
 
     QTableWidget *create_words_table() const;
 
+    QWidget *create_words_file_buttons(QTableWidget *const table, const QString &context_name);
+
     void add_labeled_widget(QGridLayout *const layout, int row, const QString &label_text, QWidget *const widget) const;
 
     std::vector<uint32_t> collect_words(const QTableWidget *const table) const;
+
+    void set_words(QTableWidget *const table, const std::vector<uint32_t> &words) const;
+
+    void load_words_from_file(QTableWidget *const table, const QString &context_name);
+
+    void save_words_to_file(const QTableWidget *const table, const QString &context_name);
+
+    void load_words_from_binary_file(QTableWidget *const table, const QString &context_name);
+
+    void save_words_to_binary_file(const QTableWidget *const table, const QString &context_name);
+
+    static bool parse_word_line(QString line, uint32_t &word);
 
     QString format_word(uint32_t word) const;
 

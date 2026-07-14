@@ -4,7 +4,10 @@
 #include <memory>
 #include <new>
 #include <QComboBox>
+#include <QDataStream>
 #include <QDateTime>
+#include <QFile>
+#include <QFileDialog>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
@@ -16,15 +19,92 @@
 #include <QScrollArea>
 #include <QSpinBox>
 #include <QStackedWidget>
+#include <QStyledItemDelegate>
 #include <QString>
 #include <QStringList>
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include <QTextEdit>
+#include <QTextStream>
+#include <QValidator>
 #include <QVBoxLayout>
 #include <QWidget>
 #include "grpc_mko_client.h"
 #include "qt_view_mko.h"
+
+namespace
+{
+constexpr uint32_t MAX_MKO_WORD_VALUE{0xFFFFU};
+
+class WordValueValidator final : public QValidator
+{
+public:
+    explicit WordValueValidator(QObject *const parent = nullptr)
+        : QValidator{parent}
+    {
+    }
+
+    State validate(QString &input, int &position) const override
+    {
+        Q_UNUSED(position)
+
+        if (input.isEmpty())
+        {
+            return Intermediate;
+        }
+
+        if (input != input.trimmed())
+        {
+            return Invalid;
+        }
+
+        bool is_valid{false};
+        uint32_t value{0};
+        if (input.startsWith("0x", Qt::CaseInsensitive))
+        {
+            const QString hex_digits{input.mid(2)};
+            if (hex_digits.isEmpty())
+            {
+                return Intermediate;
+            }
+            value = hex_digits.toUInt(&is_valid, 16);
+        }
+        else
+        {
+            value = input.toUInt(&is_valid, 10);
+        }
+
+        if (!is_valid)
+        {
+            return Invalid;
+        }
+
+        return value <= MAX_MKO_WORD_VALUE ? Acceptable : Invalid;
+    }
+};
+
+class WordValueDelegate final : public QStyledItemDelegate
+{
+public:
+    explicit WordValueDelegate(QObject *const parent = nullptr)
+        : QStyledItemDelegate{parent}
+    {
+    }
+
+    QWidget *createEditor(QWidget *const parent,
+                          const QStyleOptionViewItem &option,
+                          const QModelIndex &index) const override
+    {
+        QWidget *const editor{QStyledItemDelegate::createEditor(parent, option, index)};
+        QLineEdit *const line_edit{qobject_cast<QLineEdit *>(editor)};
+        if (line_edit != nullptr)
+        {
+            line_edit->setValidator(new WordValueValidator{line_edit});
+        }
+        return editor;
+    }
+};
+}
 
 QtViewMKO::QtViewMKO(QStackedWidget *const stacked_widget) noexcept
     : central_widget{nullptr},
@@ -214,15 +294,16 @@ QWidget *QtViewMKO::create_kk_panel()
     add_labeled_widget(exchange_layout, 2, "КС2", ks2);
     add_labeled_widget(exchange_layout, 3, "Operation ID", exchange_operation_id);
     exchange_layout->addWidget(create_label("Слова данных СД1-СД32"), 4, 0, 1, 2);
-    exchange_layout->addWidget(kk_words, 5, 0, 1, 2);
+    exchange_layout->addWidget(create_words_file_buttons(kk_words, "КК ConfigureExchange"), 5, 0, 1, 2);
+    exchange_layout->addWidget(kk_words, 6, 0, 1, 2);
 
     QPushButton *exchange_button{new QPushButton{"Настроить обмен", exchange_group}};
     QPushButton *run_button{new QPushButton{"RUN: запустить обмен", exchange_group}};
     QPushButton *subscribe_button{new QPushButton{"Подписаться на результаты", exchange_group}};
 
-    exchange_layout->addWidget(exchange_button, 6, 0, 1, 2);
-    exchange_layout->addWidget(run_button, 7, 0, 1, 2);
-    exchange_layout->addWidget(subscribe_button, 8, 0, 1, 2);
+    exchange_layout->addWidget(exchange_button, 7, 0, 1, 2);
+    exchange_layout->addWidget(run_button, 8, 0, 1, 2);
+    exchange_layout->addWidget(subscribe_button, 9, 0, 1, 2);
 
     QObject::connect(exchange_button, &QPushButton::clicked, [this,
                                                               board_id,
@@ -512,10 +593,11 @@ QWidget *QtViewMKO::create_ou_panel()
     add_labeled_widget(write_layout, 0, "Board ID", write_board_id);
     add_labeled_widget(write_layout, 1, "Подадрес", write_subaddress);
     write_layout->addWidget(create_label("Слова данных СД1-СД32"), 2, 0, 1, 2);
-    write_layout->addWidget(write_words, 3, 0, 1, 2);
+    write_layout->addWidget(create_words_file_buttons(write_words, "ОУ WriteOuSubaddress"), 3, 0, 1, 2);
+    write_layout->addWidget(write_words, 4, 0, 1, 2);
 
     QPushButton *write_button{new QPushButton{"Записать подадрес", write_group}};
-    write_layout->addWidget(write_button, 4, 0, 1, 2);
+    write_layout->addWidget(write_button, 5, 0, 1, 2);
 
     QObject::connect(write_button, &QPushButton::clicked, [this, write_board_id, write_subaddress, write_words]() {
         if (mko_client == nullptr)
@@ -556,10 +638,11 @@ QWidget *QtViewMKO::create_ou_panel()
     add_labeled_widget(send_raw_layout, 0, "Board ID", send_raw_board_id);
     add_labeled_widget(send_raw_layout, 1, "Подадрес", send_raw_subaddress);
     send_raw_layout->addWidget(create_label("Сырые слова данных СД1-СД32"), 2, 0, 1, 2);
-    send_raw_layout->addWidget(send_raw_words, 3, 0, 1, 2);
+    send_raw_layout->addWidget(create_words_file_buttons(send_raw_words, "ОУ SendRawOuData"), 3, 0, 1, 2);
+    send_raw_layout->addWidget(send_raw_words, 4, 0, 1, 2);
 
     QPushButton *send_raw_button{new QPushButton{"Отправить сырые данные ОУ", send_raw_group}};
-    send_raw_layout->addWidget(send_raw_button, 4, 0, 1, 2);
+    send_raw_layout->addWidget(send_raw_button, 5, 0, 1, 2);
 
     QObject::connect(send_raw_button,
                      &QPushButton::clicked,
@@ -852,6 +935,7 @@ QTableWidget *QtViewMKO::create_words_table() const
         table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
         table->verticalHeader()->setVisible(false);
         table->setMinimumHeight(260);
+        table->setItemDelegateForColumn(1, new WordValueDelegate{table});
 
         for (int row{0}; row < WORD_COUNT; ++row)
         {
@@ -866,6 +950,39 @@ QTableWidget *QtViewMKO::create_words_table() const
         std::cerr << "Не удалось создать QTableWidget." << std::endl;
     }
     return table;
+}
+
+QWidget *QtViewMKO::create_words_file_buttons(QTableWidget *const table, const QString &context_name)
+{
+    QWidget *widget{new QWidget{}};
+    QHBoxLayout *layout{new QHBoxLayout{widget}};
+    layout->setContentsMargins(0, 0, 0, 0);
+
+    QPushButton *load_button{new QPushButton{"Загрузить СД из txt", widget}};
+    QPushButton *save_button{new QPushButton{"Сохранить СД в txt", widget}};
+    QPushButton *load_binary_button{new QPushButton{"Загрузить СД из bin", widget}};
+    QPushButton *save_binary_button{new QPushButton{"Сохранить СД в bin", widget}};
+
+    layout->addWidget(load_button);
+    layout->addWidget(save_button);
+    layout->addWidget(load_binary_button);
+    layout->addWidget(save_binary_button);
+    layout->addStretch();
+
+    QObject::connect(load_button, &QPushButton::clicked, [this, table, context_name]() {
+        load_words_from_file(table, context_name);
+    });
+    QObject::connect(save_button, &QPushButton::clicked, [this, table, context_name]() {
+        save_words_to_file(table, context_name);
+    });
+    QObject::connect(load_binary_button, &QPushButton::clicked, [this, table, context_name]() {
+        load_words_from_binary_file(table, context_name);
+    });
+    QObject::connect(save_binary_button, &QPushButton::clicked, [this, table, context_name]() {
+        save_words_to_binary_file(table, context_name);
+    });
+
+    return widget;
 }
 
 void QtViewMKO::add_labeled_widget(QGridLayout *const layout, int row, const QString &label_text, QWidget *const widget) const
@@ -888,6 +1005,280 @@ std::vector<uint32_t> QtViewMKO::collect_words(const QTableWidget *const table) 
     }
 
     return words;
+}
+
+void QtViewMKO::set_words(QTableWidget *const table, const std::vector<uint32_t> &words) const
+{
+    if (table == nullptr)
+    {
+        return;
+    }
+
+    for (int row{0}; row < WORD_COUNT; ++row)
+    {
+        QTableWidgetItem *item{table->item(row, 1)};
+        if (item == nullptr)
+        {
+            item = new QTableWidgetItem{};
+            table->setItem(row, 1, item);
+        }
+
+        const uint32_t value{
+                row < static_cast<int>(words.size()) && words[static_cast<size_t>(row)] <= MAX_MKO_WORD_VALUE
+                        ? words[static_cast<size_t>(row)]
+                        : 0U
+        };
+        item->setText(format_word(value));
+    }
+}
+
+void QtViewMKO::load_words_from_file(QTableWidget *const table, const QString &context_name)
+{
+    const QString file_name{
+            QFileDialog::getOpenFileName(
+                    central_widget,
+                    QString{"Загрузить слова данных для %1"}.arg(context_name),
+                    QString{},
+                    "Text files (*.txt);;All files (*)"
+            )
+    };
+    if (file_name.isEmpty())
+    {
+        append_log(QString{"%1: загрузка СД отменена."}.arg(context_name));
+        return;
+    }
+
+    QFile file{file_name};
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        append_log(QString{"%1: не удалось открыть файл для чтения: %2"}.arg(context_name, file_name));
+        return;
+    }
+
+    std::vector<uint32_t> words;
+    words.reserve(WORD_COUNT);
+
+    QTextStream stream{&file};
+    int line_number{0};
+    while (!stream.atEnd())
+    {
+        ++line_number;
+        uint32_t word{0};
+        if (!parse_word_line(stream.readLine(), word))
+        {
+            continue;
+        }
+
+        if (words.size() == WORD_COUNT)
+        {
+            append_log(QString{"%1: лишние слова после СД32 проигнорированы, начиная со строки %2."}
+                               .arg(context_name)
+                               .arg(line_number));
+            break;
+        }
+        words.push_back(word);
+    }
+
+    set_words(table, words);
+    append_log(
+            QString{"%1: загружено %2 слов СД из файла %3. Остальные строки таблицы заполнены нулями."}
+                    .arg(context_name)
+                    .arg(words.size())
+                    .arg(file_name)
+    );
+}
+
+void QtViewMKO::save_words_to_file(const QTableWidget *const table, const QString &context_name)
+{
+    const QString file_name{
+            QFileDialog::getSaveFileName(
+                    central_widget,
+                    QString{"Сохранить слова данных для %1"}.arg(context_name),
+                    QString{"%1_words.txt"}.arg(context_name).replace(' ', '_'),
+                    "Text files (*.txt);;All files (*)"
+            )
+    };
+    if (file_name.isEmpty())
+    {
+        append_log(QString{"%1: сохранение СД отменено."}.arg(context_name));
+        return;
+    }
+
+    QFile file{file_name};
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate))
+    {
+        append_log(QString{"%1: не удалось открыть файл для записи: %2"}.arg(context_name, file_name));
+        return;
+    }
+
+    const std::vector<uint32_t> words{collect_words(table)};
+    QTextStream stream{&file};
+    for (size_t index{0}; index < words.size(); ++index)
+    {
+        stream << "СД" << index + 1 << "=" << format_word(words[index]) << '\n';
+    }
+
+    append_log(QString{"%1: сохранено %2 слов СД в файл %3."}.arg(context_name).arg(words.size()).arg(file_name));
+}
+
+void QtViewMKO::load_words_from_binary_file(QTableWidget *const table, const QString &context_name)
+{
+    const QString file_name{
+            QFileDialog::getOpenFileName(
+                    central_widget,
+                    QString{"Загрузить бинарные слова данных для %1"}.arg(context_name),
+                    QString{},
+                    "Binary files (*.bin);;All files (*)"
+            )
+    };
+    if (file_name.isEmpty())
+    {
+        append_log(QString{"%1: загрузка бинарных СД отменена."}.arg(context_name));
+        return;
+    }
+
+    QFile file{file_name};
+    if (!file.open(QIODevice::ReadOnly))
+    {
+        append_log(QString{"%1: не удалось открыть бинарный файл для чтения: %2"}.arg(context_name, file_name));
+        return;
+    }
+
+    if (file.size() % static_cast<qint64>(sizeof(uint32_t)) != 0)
+    {
+        append_log(
+                QString{"%1: размер бинарного файла не кратен 4 байтам, неполный хвост будет проигнорирован."}
+                        .arg(context_name)
+        );
+    }
+
+    std::vector<uint32_t> words;
+    words.reserve(WORD_COUNT);
+
+    QDataStream stream{&file};
+    stream.setByteOrder(QDataStream::LittleEndian);
+    size_t invalid_words_count{0};
+    while (!stream.atEnd() && words.size() < WORD_COUNT)
+    {
+        quint32 word{0};
+        stream >> word;
+        if (stream.status() != QDataStream::Ok)
+        {
+            break;
+        }
+        if (word > MAX_MKO_WORD_VALUE)
+        {
+            ++invalid_words_count;
+            words.push_back(0U);
+            continue;
+        }
+        words.push_back(static_cast<uint32_t>(word));
+    }
+
+    if (!stream.atEnd())
+    {
+        append_log(QString{"%1: лишние бинарные слова после СД32 проигнорированы."}.arg(context_name));
+    }
+
+    set_words(table, words);
+    if (invalid_words_count > 0)
+    {
+        append_log(
+                QString{"%1: %2 бинарных слов вышли за диапазон 0..0xFFFF и заменены на 0."}
+                        .arg(context_name)
+                        .arg(invalid_words_count)
+        );
+    }
+    append_log(
+            QString{"%1: загружено %2 бинарных слов СД из файла %3. Остальные строки таблицы заполнены нулями."}
+                    .arg(context_name)
+                    .arg(words.size())
+                    .arg(file_name)
+    );
+}
+
+void QtViewMKO::save_words_to_binary_file(const QTableWidget *const table, const QString &context_name)
+{
+    const QString file_name{
+            QFileDialog::getSaveFileName(
+                    central_widget,
+                    QString{"Сохранить бинарные слова данных для %1"}.arg(context_name),
+                    QString{"%1_words.bin"}.arg(context_name).replace(' ', '_'),
+                    "Binary files (*.bin);;All files (*)"
+            )
+    };
+    if (file_name.isEmpty())
+    {
+        append_log(QString{"%1: сохранение бинарных СД отменено."}.arg(context_name));
+        return;
+    }
+
+    QFile file{file_name};
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate))
+    {
+        append_log(QString{"%1: не удалось открыть бинарный файл для записи: %2"}.arg(context_name, file_name));
+        return;
+    }
+
+    const std::vector<uint32_t> words{collect_words(table)};
+    QDataStream stream{&file};
+    stream.setByteOrder(QDataStream::LittleEndian);
+    for (const uint32_t word : words)
+    {
+        stream << static_cast<quint32>(word);
+    }
+
+    if (stream.status() != QDataStream::Ok)
+    {
+        append_log(QString{"%1: ошибка записи бинарного файла: %2"}.arg(context_name, file_name));
+        return;
+    }
+
+    append_log(
+            QString{"%1: сохранено %2 слов СД в бинарный файл %3, формат uint32 little-endian."}
+                    .arg(context_name)
+                    .arg(words.size())
+                    .arg(file_name)
+    );
+}
+
+bool QtViewMKO::parse_word_line(QString line, uint32_t &word)
+{
+    const qsizetype hash_comment{line.indexOf('#')};
+    if (hash_comment >= 0)
+    {
+        line.truncate(hash_comment);
+    }
+
+    const qsizetype slash_comment{line.indexOf("//")};
+    if (slash_comment >= 0)
+    {
+        line.truncate(slash_comment);
+    }
+
+    line = line.trimmed();
+    if (line.isEmpty())
+    {
+        return false;
+    }
+
+    line.replace('=', ' ');
+    line.replace(',', ' ');
+    line.replace(';', ' ');
+
+    const QStringList parts{line.split(' ', Qt::SkipEmptyParts)};
+    for (auto iterator{parts.crbegin()}; iterator != parts.crend(); ++iterator)
+    {
+        bool is_valid{false};
+        const uint32_t value{iterator->toUInt(&is_valid, 0)};
+        if (is_valid && value <= MAX_MKO_WORD_VALUE)
+        {
+            word = value;
+            return true;
+        }
+    }
+
+    return false;
 }
 
 QString QtViewMKO::format_word(uint32_t word) const
