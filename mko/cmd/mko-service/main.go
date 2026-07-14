@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	mkoapiv1 "mko/api/gen"
+	"mko/internal/config"
 	"mko/internal/logging"
 	"mko/internal/service"
 	"mko/internal/transport"
@@ -19,14 +20,14 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-const (
-	defaultServiceAddr = "127.0.0.1:50051"
-	defaultDriverAddr  = "127.0.0.1:50052"
-)
-
 func main() {
-	serviceAddr := envOrDefault("MKO_SERVICE_ADDR", defaultServiceAddr)
-	driverAddr := envOrDefault("MKO_DRIVER_ADDR", defaultDriverAddr)
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
+
+	serviceAddr := cfg.Service.Addr()
+	driverAddr := cfg.Driver.Addr()
 
 	logger, err := logging.NewZapLogger()
 	if err != nil {
@@ -66,14 +67,6 @@ func main() {
 	}()
 
 	waitForShutdown(grpcServer, logger)
-}
-
-func envOrDefault(key, fallback string) string {
-	value := os.Getenv(key)
-	if value == "" {
-		return fallback
-	}
-	return value
 }
 
 func waitForShutdown(server *grpc.Server, logger *zap.Logger) {
