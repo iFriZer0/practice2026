@@ -105,6 +105,7 @@ add_executable(
 
     common/rs485_errors.cpp
     common/rs485_utils.cpp
+    common/rs485_file_reader.cpp
 
     service/rs485_service.cpp
     service/main.cpp

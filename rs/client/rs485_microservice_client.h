@@ -8,6 +8,7 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include <vector>
 
 #include <grpcpp/grpcpp.h>
 
@@ -55,6 +56,16 @@ public:
         const std::string &bytes_text
     );
 
+    Rs485SendResult sendData(
+        uint32_t channel_id,
+        const std::vector<uint8_t> &bytes
+    );
+
+    Rs485SendResult sendDataFromFile(
+        uint32_t channel_id,
+        const std::string &file_path
+    );
+
     void startSubscribe(
         ReceiveCallback callback
     );
@@ -80,10 +91,6 @@ private:
         subscribe_context_;
 
     ReceiveCallback receive_callback_;
-
-    static std::string hexTextToBinary(
-        const std::string &bytes_text
-    );
 
     void subscribeLoop();
 };

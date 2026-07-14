@@ -8,43 +8,13 @@
 #include <cstdint>
 #include <deque>
 #include <exception>
-#include <iomanip>
 #include <mutex>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 namespace
 {
-
-std::string bytesToHexText(
-    const std::string &data)
-{
-    std::ostringstream stream;
-
-    for (std::size_t index = 0;
-         index < data.size();
-         ++index)
-    {
-        if (index != 0)
-        {
-            stream << ' ';
-        }
-
-        stream
-            << std::uppercase
-            << std::hex
-            << std::setw(2)
-            << std::setfill('0')
-            << static_cast<unsigned int>(
-                   static_cast<unsigned char>(
-                       data[index]
-                   )
-               );
-    }
-
-    return stream.str();
-}
 
 void fillErrorResponse(
     rs485::service::v1::SendDataResponse *response,
@@ -101,13 +71,18 @@ grpc::Status Rs485ServiceImpl::SendData(
             );
         }
 
-        const std::string bytes_text =
-            bytesToHexText(request->data());
+        const std::string &raw_data =
+            request->data();
+
+        const std::vector<uint8_t> bytes(
+            raw_data.begin(),
+            raw_data.end()
+        );
 
         const SendDataResult result =
             driver_client_->sendData(
                 channel_id,
-                bytes_text
+                bytes
             );
 
         response->set_success(result.success);
@@ -335,7 +310,7 @@ grpc::Status Rs485ServiceImpl::Subscribe(
                 );
             }
 
-response.set_data(raw_data);
+            response.set_data(raw_data);
 
             if (result.success)
             {

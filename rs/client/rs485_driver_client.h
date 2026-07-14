@@ -5,6 +5,8 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <vector>
+#include <cstdint>
 
 #include <grpcpp/grpcpp.h>
 
@@ -46,9 +48,12 @@ public:
     const std::string &endpoint() const noexcept;
 
     SendDataResult sendData(
-        uint32_t channel_id,
-        const std::string &bytes_text
-    );
+        std::uint32_t channel_id,
+        const std::string& bytes_text);
+
+    SendDataResult sendData(
+        std::uint32_t channel_id,
+        const std::vector<std::uint8_t>& bytes);
 
     void startSubscribe(
         std::function<

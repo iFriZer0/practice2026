@@ -112,6 +112,26 @@ SendDataResult Rs485DriverClient::sendData(
     uint32_t channel_id,
     const std::string &bytes_text)
 {
+    if (bytes_text.empty())
+    {
+        throw Rs485ValidationException(
+            "Byte sequence is empty"
+        );
+    }
+
+    const std::vector<uint8_t> bytes =
+        parseBytes(bytes_text);
+
+    return sendData(
+        channel_id,
+        bytes
+    );
+}
+
+SendDataResult Rs485DriverClient::sendData(
+    uint32_t channel_id,
+    const std::vector<uint8_t> &bytes)
+{
     if (!isConnected())
     {
         throw Rs485ConnectionException(
@@ -119,13 +139,10 @@ SendDataResult Rs485DriverClient::sendData(
         );
     }
 
-    const std::vector<uint8_t> bytes =
-        parseBytes(bytes_text);
-
     if (bytes.empty())
     {
         throw Rs485ValidationException(
-            "The RS-485 data field is empty"
+            "Byte sequence is empty"
         );
     }
 
@@ -138,8 +155,7 @@ SendDataResult Rs485DriverClient::sendData(
 
     grpc::ClientContext context;
 
-    auto stream =
-        stub_->SendData(&context);
+    auto stream = stub_->SendData(&context);
 
     if (!stream)
     {
@@ -166,7 +182,8 @@ SendDataResult Rs485DriverClient::sendData(
         }
 
         throw Rs485StreamException(
-            "Failed to write the SendData request"
+            "Failed to write SendDataRequest "
+            "to the gRPC stream"
         );
     }
 
@@ -193,15 +210,9 @@ SendDataResult Rs485DriverClient::sendData(
         );
     }
 
-    if (!response.success())
-    {
-        throw Rs485DriverException(
-            response.error_message()
-        );
-    }
-
-    if (response.error_message() !=
-        rs485::driver::v1::NO_ERROR)
+    if (!response.success() ||
+        response.error_message() !=
+            rs485::driver::v1::NO_ERROR)
     {
         throw Rs485DriverException(
             response.error_message()
@@ -211,7 +222,9 @@ SendDataResult Rs485DriverClient::sendData(
     SendDataResult result;
 
     result.success = true;
-    result.channel_id = response.channel_id();
+    result.channel_id =
+        response.channel_id();
+
     result.error_message.clear();
 
     return result;
@@ -274,3 +287,4 @@ void Rs485DriverClient::stopSubscribe()
 
     subscriber_->stop();
 }
+

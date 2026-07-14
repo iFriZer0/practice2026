@@ -1,6 +1,7 @@
 #ifndef VIEW_RS_485_H__
 #define VIEW_RS_485_H__
 
+#include <cstdint>
 #include <memory>
 #include <vector>
 
@@ -58,7 +59,11 @@ private:
     QPushButton *connect_button{nullptr};
 
     QSpinBox *channel_input{nullptr};
+
     QLineEdit *bytes_input{nullptr};
+
+    QLineEdit *file_path_input{nullptr};
+    QPushButton *browse_button{nullptr};
 
     QPushButton *send_button{nullptr};
     QPushButton *subscribe_button{nullptr};
@@ -87,6 +92,8 @@ private:
     );
 
     void on_connect_clicked();
+
+    void on_browse_clicked();
 
     void on_send_clicked();
 

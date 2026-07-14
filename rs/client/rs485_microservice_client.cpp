@@ -2,8 +2,11 @@
 
 #include <cctype>
 #include <exception>
+#include <fstream>
+#include <iterator>
 #include <sstream>
 #include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -81,16 +84,96 @@ Rs485SendResult Rs485MicroserviceClient::sendData(
     uint32_t channel_id,
     const std::string &bytes_text)
 {
-    if (!isConnected())
+    std::istringstream stream{
+        bytes_text
+    };
+
+    std::string token;
+    std::vector<uint8_t> bytes;
+
+    while (stream >> token)
     {
-        throw std::runtime_error(
-            "The RS-485 microservice client "
-            "is not connected"
+        if (token.size() != 2)
+        {
+            throw std::invalid_argument(
+                "Each byte must contain exactly "
+                "two hexadecimal digits"
+            );
+        }
+
+        if (!std::isxdigit(
+                static_cast<unsigned char>(
+                    token[0]
+                )
+            ) ||
+            !std::isxdigit(
+                static_cast<unsigned char>(
+                    token[1]
+                )
+            ))
+        {
+            throw std::invalid_argument(
+                "The data contains an invalid "
+                "hexadecimal byte"
+            );
+        }
+
+        const unsigned long value =
+            std::stoul(
+                token,
+                nullptr,
+                16
+            );
+
+        if (value > 0xFFUL)
+        {
+            throw std::out_of_range(
+                "The hexadecimal byte is out of range"
+            );
+        }
+
+        bytes.push_back(
+            static_cast<uint8_t>(
+                value
+            )
         );
     }
 
-    const std::string binary_data =
-        hexTextToBinary(bytes_text);
+    if (bytes.empty())
+    {
+        throw std::invalid_argument(
+            "The RS-485 data field is empty"
+        );
+    }
+
+    return sendData(
+        channel_id,
+        bytes
+    );
+}
+
+Rs485SendResult Rs485MicroserviceClient::sendData(
+    uint32_t channel_id,
+    const std::vector<uint8_t> &bytes)
+{
+    if (!isConnected())
+    {
+        throw std::runtime_error(
+            "The RS-485 microservice client is not connected"
+        );
+    }
+
+    if (bytes.empty())
+    {
+        throw std::invalid_argument(
+            "Byte sequence is empty"
+        );
+    }
+
+    const std::string binary_data(
+        reinterpret_cast<const char *>(bytes.data()),
+        bytes.size()
+    );
 
     rs485::service::v1::SendDataRequest request;
 
@@ -123,6 +206,70 @@ Rs485SendResult Rs485MicroserviceClient::sendData(
     result.error_message = response.error_message();
 
     return result;
+}
+
+Rs485SendResult Rs485MicroserviceClient::sendDataFromFile(
+    uint32_t channel_id,
+    const std::string &file_path)
+{
+    if (file_path.empty())
+    {
+        throw std::invalid_argument(
+            "File path is empty"
+        );
+    }
+
+    std::ifstream file(
+        file_path,
+        std::ios::binary
+    );
+
+    if (!file.is_open())
+    {
+        throw std::runtime_error(
+            "Failed to open file: " +
+            file_path
+        );
+    }
+
+    const std::vector<char> raw_data{
+        std::istreambuf_iterator<char>(file),
+        std::istreambuf_iterator<char>()
+    };
+
+    if (file.bad())
+    {
+        throw std::runtime_error(
+            "Failed to read file: " +
+            file_path
+        );
+    }
+
+    if (raw_data.empty())
+    {
+        throw std::invalid_argument(
+            "Selected file is empty"
+        );
+    }
+
+    std::vector<uint8_t> bytes;
+    bytes.reserve(raw_data.size());
+
+    for (const char value : raw_data)
+    {
+        bytes.push_back(
+            static_cast<uint8_t>(
+                static_cast<unsigned char>(
+                    value
+                )
+            )
+        );
+    }
+
+    return sendData(
+        channel_id,
+        bytes
+    );
 }
 
 void Rs485MicroserviceClient::startSubscribe(
@@ -207,62 +354,6 @@ void Rs485MicroserviceClient::stopSubscribe()
 
     subscribe_context_.reset();
     receive_callback_ = {};
-}
-
-std::string Rs485MicroserviceClient::hexTextToBinary(
-    const std::string &bytes_text)
-{
-    std::istringstream stream{bytes_text};
-
-    std::string token;
-    std::string result;
-
-    while (stream >> token)
-    {
-        if (token.size() != 2)
-        {
-            throw std::invalid_argument(
-                "Each byte must contain exactly "
-                "two hexadecimal digits"
-            );
-        }
-
-        if (!std::isxdigit(
-                static_cast<unsigned char>(token[0])
-            ) ||
-            !std::isxdigit(
-                static_cast<unsigned char>(token[1])
-            ))
-        {
-            throw std::invalid_argument(
-                "The data contains an invalid "
-                "hexadecimal byte"
-            );
-        }
-
-        const unsigned long value =
-            std::stoul(token, nullptr, 16);
-
-        if (value > 0xFFUL)
-        {
-            throw std::out_of_range(
-                "The hexadecimal byte is out of range"
-            );
-        }
-
-        result.push_back(
-            static_cast<char>(value)
-        );
-    }
-
-    if (result.empty())
-    {
-        throw std::invalid_argument(
-            "The RS-485 data field is empty"
-        );
-    }
-
-    return result;
 }
 
 void Rs485MicroserviceClient::subscribeLoop()

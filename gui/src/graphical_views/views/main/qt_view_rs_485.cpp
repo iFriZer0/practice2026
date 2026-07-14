@@ -3,7 +3,10 @@
 #include <exception>
 #include <iostream>
 #include <new>
+#include <string>
+#include <vector>
 
+#include <QFileDialog>
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QMetaObject>
@@ -143,18 +146,51 @@ void QtViewRS485::setup_ui()
         bytes_input
     );
 
+    send_layout->addLayout(
+        data_layout
+    );
+
+    QHBoxLayout *file_layout =
+        new QHBoxLayout();
+
+    file_layout->addWidget(
+        create_label("Файл:")
+    );
+
+    file_path_input =
+        new QLineEdit(send_group);
+
+    file_path_input->setReadOnly(true);
+    file_path_input->setPlaceholderText(
+        "Файл не выбран"
+    );
+
+    file_layout->addWidget(
+        file_path_input
+    );
+
+    browse_button =
+        new QPushButton(
+            "Обзор...",
+            send_group
+        );
+
+    file_layout->addWidget(
+        browse_button
+    );
+
+    send_layout->addLayout(
+        file_layout
+    );
+
     send_button =
         new QPushButton(
             "Отправить",
             send_group
         );
 
-    data_layout->addWidget(
+    send_layout->addWidget(
         send_button
-    );
-
-    send_layout->addLayout(
-        data_layout
     );
 
     main_layout->addWidget(
@@ -256,6 +292,15 @@ void QtViewRS485::setup_ui()
     );
 
     QObject::connect(
+        browse_button,
+        &QPushButton::clicked,
+        [this]()
+        {
+            on_browse_clicked();
+        }
+    );
+
+    QObject::connect(
         send_button,
         &QPushButton::clicked,
         [this]()
@@ -273,6 +318,15 @@ void QtViewRS485::setup_ui()
         }
     );
 
+    QObject::connect(
+        bytes_input,
+        &QLineEdit::textEdited,
+        [this](const QString &)
+        {
+            file_path_input->clear();
+        }
+    );
+
     set_driver_controls_enabled(false);
 }
 
@@ -282,6 +336,8 @@ void QtViewRS485::set_driver_controls_enabled(
 {
     channel_input->setEnabled(enabled);
     bytes_input->setEnabled(enabled);
+    file_path_input->setEnabled(enabled);
+    browse_button->setEnabled(enabled);
     send_button->setEnabled(enabled);
     subscribe_button->setEnabled(enabled);
 }
@@ -330,6 +386,32 @@ void QtViewRS485::on_connect_clicked()
     }
 }
 
+void QtViewRS485::on_browse_clicked()
+{
+    const QString file_name =
+        QFileDialog::getOpenFileName(
+            central_widget,
+            "Выберите файл с байтами",
+            QString(),
+            "All files (*)"
+        );
+
+    if (file_name.isEmpty())
+    {
+        return;
+    }
+
+    file_path_input->setText(
+        file_name
+    );
+
+    bytes_input->clear();
+
+    status_label->setText(
+        "Статус: файл выбран"
+    );
+}
+
 void QtViewRS485::on_send_clicked()
 {
     const uint32_t channel_id =
@@ -337,16 +419,47 @@ void QtViewRS485::on_send_clicked()
             channel_input->value()
         );
 
+    const QString file_path =
+        file_path_input->text().trimmed();
+
     const QString bytes_text =
         bytes_input->text().trimmed();
 
+    QString source_text;
+    QString sent_data_text;
+
     try
     {
-        const Rs485SendResult result =
-            rs485_client_->sendData(
-                channel_id,
-                bytes_text.toStdString()
-            );
+        Rs485SendResult result;
+
+        if (!file_path.isEmpty())
+        {
+            result =
+                rs485_client_->sendDataFromFile(
+                    channel_id,
+                    file_path.toStdString()
+                );
+
+            source_text =
+                "file: " + file_path;
+
+            sent_data_text =
+                "binary file";
+        }
+        else
+        {
+            result =
+                rs485_client_->sendData(
+                    channel_id,
+                    bytes_text.toStdString()
+                );
+
+            source_text =
+                "manual input";
+
+            sent_data_text =
+                bytes_text;
+        }
 
         QString log_entry;
 
@@ -355,8 +468,11 @@ void QtViewRS485::on_send_clicked()
             result.channel_id
         );
 
+        log_entry += "\nsource: ";
+        log_entry += source_text;
+
         log_entry += "\ndata: ";
-        log_entry += bytes_text;
+        log_entry += sent_data_text;
 
         log_entry += "\nsuccess: ";
         log_entry +=
@@ -392,8 +508,14 @@ void QtViewRS485::on_send_clicked()
         append_sent_log(
             "channel_id: "
             + QString::number(channel_id)
+            + "\nsource: "
+            + (
+                file_path.isEmpty()
+                    ? QString{"manual input"}
+                    : QString{"file: "} + file_path
+              )
             + "\ndata: "
-            + bytes_text
+            + sent_data_text
             + "\nexception: "
             + QString::fromStdString(
                 error.what()
