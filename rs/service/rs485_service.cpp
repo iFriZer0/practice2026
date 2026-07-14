@@ -426,6 +426,11 @@ grpc::Status Rs485ServiceImpl::Subscribe(
             {
                 break;
             }
+            if (response.error_code() ==
+                rs485::service::v1::DRIVER_NOT_CONNECTED)
+            {
+                break;
+            }
         }
     }
     catch (const std::exception &exception)
