@@ -52,25 +52,35 @@ set(
 )
 
 set(
-    RS485_GENERATED_SOURCES
+    RS485_DRIVER_GENERATED_SOURCES
     "${RS485_GENERATED_DIR}/rs485_driver.pb.cc"
     "${RS485_GENERATED_DIR}/rs485_driver.grpc.pb.cc"
+)
+
+set(
+    RS485_DRIVER_GENERATED_HEADERS
+    "${RS485_GENERATED_DIR}/rs485_driver.pb.h"
+    "${RS485_GENERATED_DIR}/rs485_driver.grpc.pb.h"
+)
+
+set(
+    RS485_SERVICE_GENERATED_SOURCES
     "${RS485_GENERATED_DIR}/rs485_service.pb.cc"
     "${RS485_GENERATED_DIR}/rs485_service.grpc.pb.cc"
 )
 
 set(
-    RS485_GENERATED_HEADERS
-    "${RS485_GENERATED_DIR}/rs485_driver.pb.h"
-    "${RS485_GENERATED_DIR}/rs485_driver.grpc.pb.h"
+    RS485_SERVICE_GENERATED_HEADERS
     "${RS485_GENERATED_DIR}/rs485_service.pb.h"
     "${RS485_GENERATED_DIR}/rs485_service.grpc.pb.h"
 )
 
 add_custom_command(
     OUTPUT
-        ${RS485_GENERATED_SOURCES}
-        ${RS485_GENERATED_HEADERS}
+        ${RS485_DRIVER_GENERATED_SOURCES}
+        ${RS485_DRIVER_GENERATED_HEADERS}
+        ${RS485_SERVICE_GENERATED_SOURCES}
+        ${RS485_SERVICE_GENERATED_HEADERS}
 
     COMMAND
         "${PROTOC_EXECUTABLE}"
@@ -92,9 +102,66 @@ add_custom_command(
 
 add_custom_target(
     rs485_generate_proto
+
     DEPENDS
-        ${RS485_GENERATED_SOURCES}
-        ${RS485_GENERATED_HEADERS}
+        ${RS485_DRIVER_GENERATED_SOURCES}
+        ${RS485_DRIVER_GENERATED_HEADERS}
+        ${RS485_SERVICE_GENERATED_SOURCES}
+        ${RS485_SERVICE_GENERATED_HEADERS}
+)
+
+add_library(
+    rs485_driver_proto
+    STATIC
+
+    ${RS485_DRIVER_GENERATED_SOURCES}
+)
+
+add_dependencies(
+    rs485_driver_proto
+    rs485_generate_proto
+)
+
+target_include_directories(
+    rs485_driver_proto
+    SYSTEM
+    PUBLIC
+        "${RS485_GENERATED_DIR}"
+        ${Protobuf_INCLUDE_DIRS}
+)
+
+target_link_libraries(
+    rs485_driver_proto
+    PUBLIC
+        gRPC::grpc++
+        protobuf::libprotobuf
+)
+
+add_library(
+    rs485_service_proto
+    STATIC
+
+    ${RS485_SERVICE_GENERATED_SOURCES}
+)
+
+add_dependencies(
+    rs485_service_proto
+    rs485_generate_proto
+)
+
+target_include_directories(
+    rs485_service_proto
+    SYSTEM
+    PUBLIC
+        "${RS485_GENERATED_DIR}"
+        ${Protobuf_INCLUDE_DIRS}
+)
+
+target_link_libraries(
+    rs485_service_proto
+    PUBLIC
+        gRPC::grpc++
+        protobuf::libprotobuf
 )
 
 add_executable(
@@ -109,13 +176,6 @@ add_executable(
 
     service/rs485_service.cpp
     service/main.cpp
-
-    ${RS485_GENERATED_SOURCES}
-)
-
-add_dependencies(
-    rs485_microservice
-    rs485_generate_proto
 )
 
 target_include_directories(
@@ -124,17 +184,61 @@ target_include_directories(
         "${CMAKE_CURRENT_SOURCE_DIR}/client"
         "${CMAKE_CURRENT_SOURCE_DIR}/common"
         "${CMAKE_CURRENT_SOURCE_DIR}/service"
-        "${RS485_GENERATED_DIR}"
-        ${Protobuf_INCLUDE_DIRS}
 )
 
 target_link_libraries(
     rs485_microservice
     PRIVATE
-        gRPC::grpc++
-        protobuf::libprotobuf
+        rs485_driver_proto
+        rs485_service_proto
         Threads::Threads
 )
+
+if(
+    EXISTS
+        "${CMAKE_CURRENT_SOURCE_DIR}/fake_driver/fake_rs485_driver.cpp"
+    AND
+    EXISTS
+        "${CMAKE_CURRENT_SOURCE_DIR}/fake_driver/main.cpp"
+)
+    add_executable(
+        rs485_fake_driver
+
+        fake_driver/fake_rs485_driver.cpp
+        fake_driver/main.cpp
+    )
+
+    target_include_directories(
+        rs485_fake_driver
+        PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/fake_driver"
+    )
+
+    target_link_libraries(
+        rs485_fake_driver
+        PRIVATE
+            rs485_driver_proto
+            Threads::Threads
+    )
+endif()
+
+if(
+    EXISTS
+        "${CMAKE_CURRENT_SOURCE_DIR}/test_client/main.cpp"
+)
+    add_executable(
+        rs485_test_client
+
+        test_client/main.cpp
+    )
+
+    target_link_libraries(
+        rs485_test_client
+        PRIVATE
+            rs485_service_proto
+            Threads::Threads
+    )
+endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(
@@ -144,4 +248,24 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
             -Wextra
             -Wpedantic
     )
+
+    if(TARGET rs485_fake_driver)
+        target_compile_options(
+            rs485_fake_driver
+            PRIVATE
+                -Wall
+                -Wextra
+                -Wpedantic
+        )
+    endif()
+
+    if(TARGET rs485_test_client)
+        target_compile_options(
+            rs485_test_client
+            PRIVATE
+                -Wall
+                -Wextra
+                -Wpedantic
+        )
+    endif()
 endif()

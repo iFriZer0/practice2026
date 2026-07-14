@@ -13,12 +13,13 @@
 #include <string>
 #include <utility>
 #include <vector>
+
 namespace
 {
 
 void fillErrorResponse(
     rs485::service::v1::SendDataResponse *response,
-    uint32_t channel_id,
+    std::uint32_t channel_id,
     rs485::service::v1::ErrorCode error_code,
     const std::string &error_message)
 {
@@ -28,7 +29,63 @@ void fillErrorResponse(
     response->set_error_message(error_message);
 }
 
+rs485::service::v1::ErrorCode
+serviceCodeFromDriverError(
+    rs485::driver::v1::PultErrors error)
+{
+    using DriverError =
+        rs485::driver::v1::PultErrors;
+
+    using ServiceError =
+        rs485::service::v1::ErrorCode;
+
+    if (error == DriverError::NO_ERROR)
+    {
+        return ServiceError::NO_ERROR;
+    }
+
+    if (error == DriverError::NO_REPLY)
+    {
+        return ServiceError::DRIVER_NO_REPLY;
+    }
+
+    if (error == DriverError::TIMEOUT)
+    {
+        return ServiceError::DRIVER_TIMEOUT;
+    }
+
+    return ServiceError::DRIVER_ERROR;
 }
+
+rs485::service::v1::ErrorCode
+serviceCodeFromGrpcError(
+    grpc::StatusCode status_code)
+{
+    using ServiceError =
+        rs485::service::v1::ErrorCode;
+
+    if (status_code ==
+        grpc::StatusCode::UNAVAILABLE)
+    {
+        return ServiceError::DRIVER_NOT_CONNECTED;
+    }
+
+    if (status_code ==
+        grpc::StatusCode::DEADLINE_EXCEEDED)
+    {
+        return ServiceError::DRIVER_TIMEOUT;
+    }
+
+    if (status_code ==
+        grpc::StatusCode::INTERNAL)
+    {
+        return ServiceError::INTERNAL_ERROR;
+    }
+
+    return ServiceError::DRIVER_ERROR;
+}
+
+} // namespace
 
 Rs485ServiceImpl::Rs485ServiceImpl(
     std::shared_ptr<Rs485DriverClient> driver_client)
@@ -51,7 +108,8 @@ grpc::Status Rs485ServiceImpl::SendData(
 {
     static_cast<void>(context);
 
-    if (request == nullptr || response == nullptr)
+    if (request == nullptr ||
+        response == nullptr)
     {
         return grpc::Status{
             grpc::StatusCode::INTERNAL,
@@ -59,7 +117,7 @@ grpc::Status Rs485ServiceImpl::SendData(
         };
     }
 
-    const uint32_t channel_id =
+    const std::uint32_t channel_id =
         request->channel_id();
 
     try
@@ -74,7 +132,7 @@ grpc::Status Rs485ServiceImpl::SendData(
         const std::string &raw_data =
             request->data();
 
-        const std::vector<uint8_t> bytes(
+        const std::vector<std::uint8_t> bytes(
             raw_data.begin(),
             raw_data.end()
         );
@@ -85,14 +143,26 @@ grpc::Status Rs485ServiceImpl::SendData(
                 bytes
             );
 
-        response->set_success(result.success);
-        response->set_channel_id(result.channel_id);
+        if (!result.success)
+        {
+            fillErrorResponse(
+                response,
+                result.channel_id,
+                rs485::service::v1::DRIVER_ERROR,
+                result.error_message
+            );
+
+            return grpc::Status::OK;
+        }
+
+        response->set_success(true);
+        response->set_channel_id(
+            result.channel_id
+        );
         response->set_error_code(
             rs485::service::v1::NO_ERROR
         );
-        response->set_error_message(
-            result.error_message
-        );
+        response->clear_error_message();
 
         return grpc::Status::OK;
     }
@@ -119,7 +189,9 @@ grpc::Status Rs485ServiceImpl::SendData(
         fillErrorResponse(
             response,
             channel_id,
-            rs485::service::v1::DRIVER_ERROR,
+            serviceCodeFromDriverError(
+                exception.errorCode()
+            ),
             exception.what()
         );
     }
@@ -128,7 +200,9 @@ grpc::Status Rs485ServiceImpl::SendData(
         fillErrorResponse(
             response,
             channel_id,
-            rs485::service::v1::DRIVER_ERROR,
+            serviceCodeFromGrpcError(
+                exception.statusCode()
+            ),
             exception.what()
         );
     }
@@ -172,7 +246,8 @@ grpc::Status Rs485ServiceImpl::Subscribe(
 {
     static_cast<void>(request);
 
-    if (context == nullptr || writer == nullptr)
+    if (context == nullptr ||
+        writer == nullptr)
     {
         return grpc::Status{
             grpc::StatusCode::INTERNAL,
@@ -211,7 +286,9 @@ grpc::Status Rs485ServiceImpl::Subscribe(
 
     try
     {
-        driver_client_->startSubscribe(callback);
+        driver_client_->startSubscribe(
+            callback
+        );
     }
     catch (const Rs485ConnectionException &exception)
     {
@@ -224,6 +301,13 @@ grpc::Status Rs485ServiceImpl::Subscribe(
     {
         return grpc::Status{
             grpc::StatusCode::INVALID_ARGUMENT,
+            exception.what()
+        };
+    }
+    catch (const Rs485GrpcException &exception)
+    {
+        return grpc::Status{
+            exception.statusCode(),
             exception.what()
         };
     }
@@ -249,7 +333,8 @@ grpc::Status Rs485ServiceImpl::Subscribe(
         };
     }
 
-    grpc::Status result_status = grpc::Status::OK;
+    grpc::Status result_status =
+        grpc::Status::OK;
 
     try
     {
@@ -267,8 +352,9 @@ grpc::Status Rs485ServiceImpl::Subscribe(
                     std::chrono::milliseconds{100},
                     [&result_queue, context]()
                     {
-                        return !result_queue.empty() ||
-                               context->IsCancelled();
+                        return
+                            !result_queue.empty() ||
+                            context->IsCancelled();
                     }
                 );
 
@@ -292,7 +378,10 @@ grpc::Status Rs485ServiceImpl::Subscribe(
             rs485::service::v1::ReceiveDataResponse
                 response;
 
-            response.set_success(result.success);
+            response.set_success(
+                result.success
+            );
+
             response.set_channel_id(
                 result.channel_id
             );
@@ -300,7 +389,7 @@ grpc::Status Rs485ServiceImpl::Subscribe(
             std::string raw_data;
 
             for (const ReceiveDataPacket &packet :
-                result.packets)
+                 result.packets)
             {
                 raw_data.append(
                     reinterpret_cast<const char *>(
@@ -310,7 +399,9 @@ grpc::Status Rs485ServiceImpl::Subscribe(
                 );
             }
 
-            response.set_data(raw_data);
+            response.set_data(
+                raw_data
+            );
 
             if (result.success)
             {
@@ -318,9 +409,7 @@ grpc::Status Rs485ServiceImpl::Subscribe(
                     rs485::service::v1::NO_ERROR
                 );
 
-                response.set_error_message(
-                    result.error_message
-                );
+                response.clear_error_message();
             }
             else
             {
