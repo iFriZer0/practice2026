@@ -1,41 +1,64 @@
 #include "rs485_errors.h"
 
+#include <array>
 #include <string>
+#include <utility>
 
 namespace
 {
 
-std::string driverErrorMessage(
-    rs485::driver::v1::PultErrors error)
-{
-    using namespace rs485::driver::v1;
+using DriverError =
+    rs485::driver::v1::PultErrors;
 
-    switch (error)
+using DriverErrorEntry =
+    std::pair<DriverError, const char *>;
+
+constexpr std::array<DriverErrorEntry, 7>
+    DRIVER_ERROR_MESSAGES
+{{
     {
-        case NO_ERROR:
-            return "No RS-485 driver error";
-
-        case WRONG_BRIDGE_ID:
-            return "Invalid bridge identifier";
-
-        case NO_REPLY:
-            return "No reply from the transport layer";
-
-        case WRONG_INTERFACE:
-            return "Invalid interface or channel";
-
-        case TIMEOUT:
-            return "The RS-485 operation timed out";
-
-        case EMPTY_BUFFER:
-            return "The received buffer is empty or incomplete";
-
-        case WRONG_PARAM:
-            return "Invalid parameters were provided to the driver";
-
-        default:
-            return "Unknown RS-485 driver error";
+        rs485::driver::v1::NO_ERROR,
+        "No RS-485 driver error"
+    },
+    {
+        rs485::driver::v1::WRONG_BRIDGE_ID,
+        "Invalid bridge identifier"
+    },
+    {
+        rs485::driver::v1::NO_REPLY,
+        "No reply from the transport layer"
+    },
+    {
+        rs485::driver::v1::WRONG_INTERFACE,
+        "Invalid interface or channel"
+    },
+    {
+        rs485::driver::v1::TIMEOUT,
+        "The RS-485 operation timed out"
+    },
+    {
+        rs485::driver::v1::EMPTY_BUFFER,
+        "The received buffer is empty or incomplete"
+    },
+    {
+        rs485::driver::v1::WRONG_PARAM,
+        "Invalid parameters were provided to the driver"
     }
+}};
+
+std::string driverErrorMessage(
+    DriverError error)
+{
+    for (const DriverErrorEntry &entry :
+         DRIVER_ERROR_MESSAGES)
+    {
+        if (entry.first == error)
+        {
+            return entry.second;
+        }
+    }
+
+    return "Unknown RS-485 driver error";
 }
 
 std::string grpcErrorMessage(
@@ -44,7 +67,9 @@ std::string grpcErrorMessage(
     std::string message =
         "gRPC error " +
         std::to_string(
-            static_cast<int>(status.error_code())
+            static_cast<int>(
+                status.error_code()
+            )
         );
 
     if (!status.error_message().empty())
@@ -64,27 +89,33 @@ Rs485Exception::Rs485Exception(
 {
 }
 
-Rs485ValidationException::Rs485ValidationException(
+Rs485ValidationException::
+Rs485ValidationException(
     const std::string &message)
     : Rs485Exception(message)
 {
 }
 
-Rs485ConnectionException::Rs485ConnectionException(
+Rs485ConnectionException::
+Rs485ConnectionException(
     const std::string &message)
     : Rs485Exception(message)
 {
 }
 
-Rs485StreamException::Rs485StreamException(
+Rs485StreamException::
+Rs485StreamException(
     const std::string &message)
     : Rs485Exception(message)
 {
 }
 
-Rs485DriverException::Rs485DriverException(
+Rs485DriverException::
+Rs485DriverException(
     rs485::driver::v1::PultErrors error)
-    : Rs485Exception(driverErrorMessage(error)),
+    : Rs485Exception(
+          driverErrorMessage(error)
+      ),
       error_code_(error)
 {
 }
@@ -95,10 +126,15 @@ Rs485DriverException::errorCode() const noexcept
     return error_code_;
 }
 
-Rs485GrpcException::Rs485GrpcException(
+Rs485GrpcException::
+Rs485GrpcException(
     const grpc::Status &status)
-    : Rs485Exception(grpcErrorMessage(status)),
-      status_code_(status.error_code())
+    : Rs485Exception(
+          grpcErrorMessage(status)
+      ),
+      status_code_(
+          status.error_code()
+      )
 {
 }
 

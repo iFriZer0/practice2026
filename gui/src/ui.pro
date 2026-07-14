@@ -6,6 +6,7 @@ GRPC_CFLAGS = $$system(pkg-config --cflags grpc++ protobuf)
 GRPC_LIBS = $$system(pkg-config --static --libs grpc++ protobuf)
 
 QMAKE_CXXFLAGS += $$GRPC_CFLAGS
+
 LIBS += $$GRPC_LIBS
 
 QMAKE_CXXFLAGS += \
@@ -16,6 +17,11 @@ QMAKE_CXXFLAGS += \
     -Wfloat-conversion \
     -Wfloat-equal
 
+PKG_CONFIG_PATHS = $$system(pkg-config --cflags-only-I grpc++ protobuf)
+PKG_CONFIG_SYSTEM_PATHS = $$replace(PKG_CONFIG_PATHS, -I, -isystem )
+
+QMAKE_CXXFLAGS += $$PKG_CONFIG_SYSTEM_PATHS
+
 RS485_ROOT_DIR = $$clean_path($$PWD/../../rs)
 RS485_CLIENT_DIR = $$clean_path($$RS485_ROOT_DIR/client)
 RS485_GENERATED_DIR = $$clean_path($$RS485_ROOT_DIR/build/gui_generated)
@@ -25,7 +31,7 @@ RS485_GENERATE_SCRIPT = $$clean_path($$RS485_ROOT_DIR/scripts/generate_gui_proto
     error("RS-485 proto generation script was not found: $$RS485_GENERATE_SCRIPT")
 }
 
-RS485_GENERATION_RESULT = $$system($$RS485_GENERATE_SCRIPT)
+RS485_GENERATION_RESULT = $$system("\"$$RS485_GENERATE_SCRIPT\"")
 
 isEmpty(RS485_GENERATION_RESULT) {
     error("Failed to generate RS-485 microservice gRPC files")
