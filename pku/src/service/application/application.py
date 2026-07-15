@@ -17,7 +17,7 @@ from errors import error
 
 class Application:
     DRIVER_ADDRESS_PATH: str = "../configuration/driver_address.json"
-    SERVICE_ADDRESS_PATH: str = "../../../configuration/pku_service_address.txt"
+    SERVICE_ADDRESS_PATH: str = "../configuration/pku_service_address.txt"
 
     LOG_DIRECTORY: str = "log"
     LOG_PATH: str = "log/log.txt"

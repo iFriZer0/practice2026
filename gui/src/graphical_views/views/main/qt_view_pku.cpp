@@ -1,5 +1,8 @@
 #include <QComboBox>
 #include <QTextEdit>
+#include <algorithm>
+#include <cctype>
+#include <cstddef>
 #include <iostream>
 #include <fstream>
 #include <new>
@@ -12,7 +15,13 @@
 #include <QLineEdit>
 #include <QHBoxLayout>
 #include <QCheckBox>
+#include <QGroupBox>
+#include <QGridLayout>
+#include <QRegularExpressionValidator>
+#include <QRegularExpression>
 #include <grpcpp/grpcpp.h>
+#include <sstream>
+#include <string>
 #include "pku_service.pb.h"
 #include "pku_service.grpc.pb.h"
 
@@ -21,26 +30,73 @@
 
 using namespace api;
 
-std::string read_pku_service_address() {
-    std::ifstream file("configuration/pku_service_address.txt");
-    std::string address;
-    if (file.is_open() && std::getline(file, address)) {
-        address.erase(std::remove_if(address.begin(), address.end(), ::isspace), address.end());
-        return address;
+QGroupBox *QtViewPKU::create_group_box(const QString &title, QWidget *const parent) const noexcept
+{
+    QGroupBox *group_box{nullptr};
+    try {
+        group_box = new QGroupBox{title, parent};
     }
-    return "localhost:50051";
+    catch (const std::bad_alloc &) {
+        std::cerr << "Не удалось создать QGroupBox" << std::endl;
+    }
+    return group_box;
+}
+
+QGridLayout *QtViewPKU::create_grid_layout(QWidget *const parent) const noexcept
+{
+    QGridLayout *grid_layout{nullptr};
+    try {
+        grid_layout = new QGridLayout{parent};
+    }
+    catch (const std::bad_alloc &) {
+        std::cerr << "Не удалось создать QGridLayout" << std::endl;
+    }
+    return grid_layout;
+}
+
+QCheckBox *QtViewPKU::create_check_box(const QString &text, QWidget *const parent) const noexcept
+{
+    QCheckBox *check_box{nullptr};
+    try {
+        check_box = new QCheckBox{text, parent};
+    }
+    catch (const std::bad_alloc &) {
+        std::cerr << "Не удалось создать QCheckBox" << std::endl;
+    }
+    return check_box;
+}
+
+QRegularExpressionValidator *QtViewPKU::create_regular_expression_validator(const QRegularExpression &re, QObject *const parent) const noexcept
+{
+    QRegularExpressionValidator *regular_expression_validator{nullptr};
+    try {
+        regular_expression_validator = new QRegularExpressionValidator{re, parent};
+    }
+    catch (const std::bad_alloc &) {
+        std::cerr << "Не удалось создать QRegularExpressionValidator" << std::endl;
+    }
+    return regular_expression_validator;
+}
+
+std::string read_pku_service_address() {
+    std::ifstream file("../../pku/src/configuration/pku_service_address.txt");
+    std::string ip;
+    if (file.is_open() && std::getline(file, ip)) {
+        ip.erase(std::remove_if(ip.begin(), ip.end(), ::isspace), ip.end());
+    }
+    std::string port;
+    if (std::getline(file, port)) {
+        port.erase(std::remove_if(port.begin(), port.end(), isspace), port.end());
+    }
+    return ip + ":" + port;
 }
 
 QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget) noexcept
     : stacked_widget{stacked_widget}
 {
     std::string target_address = read_pku_service_address();
-    auto channel = grpc::CreateChannel(target_address, grpc::InsecureChannelCredentials());
+    std::cout << target_address << std::endl;
     channel_ = grpc::CreateChannel(target_address, grpc::InsecureChannelCredentials());
-
-
-
-
 
     central_widget = create_widget();
     QVBoxLayout *main_layout = create_v_box_layout(central_widget);
@@ -91,6 +147,52 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget) noexcept
     QPushButton *btn_write_main = create_button("Записать основную информацию", central_widget);
     btn_write_main->setFixedWidth(250);
     main_info_buttons_layout->addWidget(btn_write_main);
+
+    QGroupBox *info_group{create_group_box("Параметры основной информации", central_widget)};
+    QGridLayout *grid_layout{create_grid_layout(info_group)};
+
+    grid_layout->addWidget(create_label("Описание (до 120 символов)"), 0, 0);
+    QLineEdit *le_description{create_line_edit(central_widget)};
+    le_description->setMaxLength(120);
+    le_description->setMinimumWidth(300);
+    grid_layout->addWidget(le_description, 0, 1, 1, 2);
+
+    grid_layout->addWidget(create_label("MAC-адрес"), 1, 0);
+    QLineEdit *le_mac{create_line_edit(central_widget)};
+    le_mac->setPlaceholderText("AA:BB:CC:DD:EE:FF");
+    le_mac->setValidator(create_regular_expression_validator(QRegularExpression{"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$"}, stacked_widget));
+    grid_layout->addWidget(le_mac, 1, 1);
+
+    QRegularExpression ip_regex{"^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"};
+
+    grid_layout->addWidget(create_label("IP-адрес"), 2, 0);
+    QLineEdit *le_ip{create_line_edit(central_widget)};
+    le_ip->setPlaceholderText("192.168.1.1");
+    le_ip->setValidator(create_regular_expression_validator(ip_regex, stacked_widget));
+    grid_layout->addWidget(le_ip, 2, 1);
+
+    grid_layout->addWidget(create_label("Сетевая маска"), 2, 2);
+    QLineEdit *le_mask{create_line_edit(central_widget)};
+    le_mask->setPlaceholderText("255.255.255.0");
+    le_mask->setValidator(create_regular_expression_validator(ip_regex, stacked_widget));
+    grid_layout->addWidget(le_mask, 2, 3);
+
+    grid_layout->addWidget(create_label("Основной шлюз"), 3, 0);
+    QLineEdit *le_gateway{create_line_edit(central_widget)};
+    le_gateway->setPlaceholderText("192.168.1.1");
+    le_gateway->setValidator(create_regular_expression_validator(ip_regex, stacked_widget));
+    grid_layout->addWidget(le_gateway, 3, 1);
+
+    grid_layout->addWidget(create_label("DNS"), 3, 2);
+    QLineEdit *le_dns{create_line_edit(central_widget)};
+    le_dns->setPlaceholderText("8.8.8.8");
+    le_dns->setValidator(create_regular_expression_validator(ip_regex, stacked_widget));
+    grid_layout->addWidget(le_dns, 3, 3);
+
+    QCheckBox *cb_dhcp{create_check_box("Использовать DHCP", central_widget)};
+    grid_layout->addWidget(cb_dhcp, 4, 0, 1, 2);
+
+    main_layout->addWidget(info_group);
 
     main_info_buttons_layout->addStretch();
     main_layout->addLayout(main_info_buttons_layout);
@@ -190,7 +292,7 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget) noexcept
     main_layout->addWidget(pku_log);
 
 
-    QObject::connect(btn_check_conn, &QPushButton::clicked, [=]() {
+    QObject::connect(btn_check_conn, &QPushButton::clicked, [this, lbl_connect_status]() {
         lbl_connect_status->setText("Запрос...");
 
         ::api::CommandRequest request;
@@ -206,13 +308,14 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget) noexcept
         grpc::Status status = stub->SendCommand(&context, request, &response);
 
         if (status.ok()) {
-            lbl_connect_status->setText(QString::fromStdString(response.result_text()));
+            std::string result{response.success() ? "Соединение установлено" : "Ошибка \"" + response.result_text() + "\""};
+            lbl_connect_status->setText(QString::fromStdString(result));
         } else {
             lbl_connect_status->setText("Ошибка сети");
         }
     });
 
-    QObject::connect(btn_get_status, &QPushButton::clicked, [=]() {
+    QObject::connect(btn_get_status, &QPushButton::clicked, [lbl_equipment_status, this]() {
         lbl_equipment_status->setText("Запрос...");
 
         api::CommandRequest request;
@@ -225,15 +328,15 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget) noexcept
         grpc::Status status = stub->SendCommand(&context, request, &response);
 
         if (status.ok()) {
-            lbl_equipment_status->setText(QString::fromStdString(response.result_text()));
+            std::string result{response.success() ? "Соединение установлено" : "Ошибка \"" + response.result_text() + "\""};
+            lbl_equipment_status->setText(QString::fromStdString(result));
         } else {
             lbl_equipment_status->setText("Ошибка сети");
         }
     });
 
-
-    QObject::connect(btn_get_version, &QPushButton::clicked, [=]() {
-        lbl_version_status->setText("Запрос...");
+    QObject::connect(btn_read_main, &QPushButton::clicked, [lbl_read_main_status, pku_log, this]() {
+        lbl_read_main_status->setText("Чтение...");
 
         api::CommandRequest request;
         request.set_command_id(3);
@@ -245,89 +348,108 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget) noexcept
         grpc::Status status = stub->SendCommand(&context, request, &response);
 
         if (status.ok()) {
-            lbl_version_status->setText(QString::fromStdString(response.result_text()));
-        } else {
-            lbl_version_status->setText("Ошибка сети");
-        }
-    });
-
-
-
-    QObject::connect(btn_read_main, &QPushButton::clicked, [=]() {
-        lbl_read_main_status->setText("Чтение...");
-
-        api::CommandRequest request;
-        request.set_command_id(4);
-
-        api::CommandResponse response;
-        grpc::ClientContext context;
-
-        auto stub = ::api::MainService::NewStub(channel_);
-        grpc::Status status = stub->SendCommand(&context, request, &response);
-
-        if (status.ok()) {
-            QStringList parts = QString::fromStdString(response.result_text()).split(';');
-            lbl_read_main_status->setText("Успешно прочитано");
-            pku_log->append("--- Разделенная информация устройства ---");
-            for (const QString& part : parts) {
-                pku_log->append(part);
+            if (!response.success()) {
+                pku_log->append(QString::fromStdString("Ошибка: \"" + response.result_text() + "\""));
+            } else {
+                QStringList parts = QString::fromStdString(response.result_text()).split(';');
+                if (parts.size() >= 9) {
+                    pku_log->append("Прочитана основная информация");
+                    pku_log->append("Идентификатор модуля: " + parts[0]);
+                    pku_log->append("Размер буфера на приём: " + parts[1]);
+                    pku_log->append("Описание модуля: " + parts[2]);
+                    pku_log->append("MAC-адрес: " + parts[3]);
+                    pku_log->append("IP-адрес: " + parts[4]);
+                    pku_log->append("Маска подсети: " + parts[5]);
+                    pku_log->append("Основной шлюз: " + parts[6]);
+                    pku_log->append("DNS-сервер: " + parts[7]);
+                    pku_log->append("Флаг \"Использовать DHCP\": " + parts[8]);
+                    lbl_read_main_status->setText("Успешно прочитано");
+                } else {
+                    lbl_read_main_status->setText("Не удалось прочитать всю основную информацию");
+                }
             }
         } else {
-            lbl_read_main_status->setText("Ошибка чтения");
+            lbl_read_main_status->setText("Ошибка сети");
         }
     });
 
+    QObject::connect(btn_write_main, &QPushButton::clicked, [lbl_write_main_status, le_description, le_mac, le_ip, le_mask, le_gateway, le_dns, cb_dhcp, this]() {
+        QString description{le_description->text()};
+        QString mac{le_mac->text()};
+        QString ip{le_ip->text()};
+        QString mask{le_mask->text()};
+        QString gateway{le_gateway->text()};
+        QString dns{le_dns->text()};
+        QString dhcp{cb_dhcp->isChecked() ? "1" : "0"};
 
+        if (description.isEmpty() || mac.isEmpty() || ip.isEmpty() || mask.isEmpty() || gateway.isEmpty() || dns.isEmpty()) {
+            lbl_write_main_status->setText("Все поля должны быть заполнены");
+        } else {
+            lbl_write_main_status->setText("Запись...");
 
-    QObject::connect(btn_write_main, &QPushButton::clicked, [=]() {
-        lbl_write_main_status->setText("Запись...");
+            api::CommandRequest request;
+            request.set_command_id(4);
+            request.set_command_param((description + ";" + mac + ";" + ip + ";" + mask + ";" + gateway + ";" + dhcp + "op_id").toStdString());
+
+            api::CommandResponse response;
+            grpc::ClientContext context;
+
+            auto stub = ::api::MainService::NewStub(channel_);
+            grpc::Status status = stub->SendCommand(&context, request, &response);
+
+            if (status.ok()) {
+                std::string result{response.success() ? "Успешно записано" : "Ошибка \"" + response.result_text() + "\""};
+                lbl_write_main_status->setText(QString::fromStdString(result));
+            } else {
+                lbl_write_main_status->setText("Ошибка записи");
+            }
+        }
+    });
+
+    QObject::connect(btn_read_pku, &QPushButton::clicked, [multi_pku_select, lbl_read_pku_status, pku_log, this]() {
+        QString param = multi_pku_select->currentText();
+        lbl_read_pku_status->setText("Чтение...");
 
         api::CommandRequest request;
         request.set_command_id(5);
+        request.set_command_param(param.toStdString());
+
 
         api::CommandResponse response;
         grpc::ClientContext context;
 
         auto stub = ::api::MainService::NewStub(channel_);
+
         grpc::Status status = stub->SendCommand(&context, request, &response);
 
         if (status.ok()) {
-            lbl_write_main_status->setText("Успешно записано");
+            if (!response.success()) {
+                lbl_read_pku_status->setText("Ошибка чтения");
+                pku_log->append(QString::fromStdString("Ошибка \"" + response.result_text() + "\""));
+            } else {
+                QStringList parts = QString::fromStdString(response.result_text()).split(';');
+                lbl_read_pku_status->setText("Успешно прочитано");
+                pku_log->append("--- Длительности ПКУ ---");
+                std::size_t index{1};
+                for (const QString& part : parts) {
+                    std::ostringstream stream;
+                    stream << "ПКУ " << index << ": " << part.toStdString() << "мс";
+                    pku_log->append(QString::fromStdString(stream.str()));
+                    ++index;
+                }
+            }
+
         } else {
-            lbl_write_main_status->setText("Ошибка записи");
+            lbl_read_pku_status->setText("Ошибка сети");
         }
     });
 
-
-    QObject::connect(btn_send_rk, &QPushButton::clicked, [=]() {
-        QString param = rk_num_input->text() + ";" + rk_time_input->text();
-        lbl_send_rk_status->setText("Отправка...");
-
-        ::api::CommandRequest request;
-        request.set_command_id(6);
-        request.set_command_param(param.toStdString());
-
-        ::api::CommandResponse response;
-        grpc::ClientContext context;
-
-
-        auto stub = ::api::MainService::NewStub(channel_);
-        grpc::Status status = stub->SendCommand(&context, request, &response);
-
-        if (status.ok()) {
-            lbl_send_rk_status->setText("Выполнено: " + QString::fromStdString(response.result_text()));
-        } else {
-            lbl_send_rk_status->setText("Ошибка сети");
-        }
-    });
-
-
-    QObject::connect(btn_set_mode, &QPushButton::clicked, [=]() {
+    QObject::connect(btn_set_mode, &QPushButton::clicked, [chan_select, mode_select, lbl_set_mode_status, this]() {
         QString param = chan_select->currentText() + ";" + QString::number(mode_select->currentIndex());
         lbl_set_mode_status->setText("Применение...");
 
         api::CommandRequest request;
-        request.set_command_id(7);
+        request.set_command_id(6);
         request.set_command_param(param.toStdString());
 
 
@@ -345,30 +467,46 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget) noexcept
         }
     });
 
-    QObject::connect(btn_read_pku, &QPushButton::clicked, [=]() {
-        QString param = multi_pku_select->currentText();
-        lbl_read_pku_status->setText("Чтение...");
+    QObject::connect(btn_send_rk, &QPushButton::clicked, [rk_num_input, lbl_send_rk_status, rk_time_input, this]() {
+        QString param = rk_num_input->text() + ";" + rk_time_input->text();
+        lbl_send_rk_status->setText("Отправка...");
+
+        ::api::CommandRequest request;
+        request.set_command_id(7);
+        request.set_command_param(param.toStdString());
+
+        ::api::CommandResponse response;
+        grpc::ClientContext context;
+
+
+        auto stub = ::api::MainService::NewStub(channel_);
+        grpc::Status status = stub->SendCommand(&context, request, &response);
+
+        if (status.ok()) {
+            lbl_send_rk_status->setText("Выполнено: " + QString::fromStdString(response.result_text()));
+        } else {
+            lbl_send_rk_status->setText("Ошибка сети");
+        }
+    });
+
+    QObject::connect(btn_get_version, &QPushButton::clicked, [lbl_version_status, this]() {
+        lbl_version_status->setText("Запрос...");
 
         api::CommandRequest request;
         request.set_command_id(8);
-        request.set_command_param(param.toStdString());
-
 
         api::CommandResponse response;
         grpc::ClientContext context;
 
         auto stub = ::api::MainService::NewStub(channel_);
-
         grpc::Status status = stub->SendCommand(&context, request, &response);
 
         if (status.ok()) {
-            lbl_read_pku_status->setText("Успешно прочитано");
-
+            lbl_version_status->setText(QString::fromStdString(response.result_text()));
         } else {
-            lbl_read_pku_status->setText("Ошибка чтения");
+            lbl_version_status->setText("Ошибка сети");
         }
     });
-
 
     central_widget->setLayout(main_layout);
 }

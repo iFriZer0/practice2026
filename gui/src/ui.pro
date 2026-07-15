@@ -77,6 +77,7 @@ INCLUDEPATH += \
     application \
     application/factory \
     application/factory/errors \
+    grpc_pku_service/
 
 SOURCES += \
     application/application.cpp \
