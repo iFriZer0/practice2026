@@ -23,6 +23,7 @@ QtViewRS485::QtViewRS485(
 {
     central_widget = create_widget();
     setup_ui();
+    connect_to_microservice();
 }
 
 QtViewRS485::~QtViewRS485()
@@ -56,44 +57,6 @@ void QtViewRS485::setup_ui()
 
     main_layout->addWidget(
         create_label("RS-485")
-    );
-
-    QGroupBox *connection_group =
-        new QGroupBox(
-            "Подключение к RS-485 микросервису",
-            central_widget
-        );
-
-    QHBoxLayout *connection_layout =
-        new QHBoxLayout(connection_group);
-
-    connection_layout->addWidget(
-        create_label("gRPC endpoint:")
-    );
-
-    driver_endpoint_input =
-        new QLineEdit(connection_group);
-
-    driver_endpoint_input->setText(
-        "127.0.0.1:50052"
-    );
-
-    connection_layout->addWidget(
-        driver_endpoint_input
-    );
-
-    connect_button =
-        new QPushButton(
-            "Подключиться",
-            connection_group
-        );
-
-    connection_layout->addWidget(
-        connect_button
-    );
-
-    main_layout->addWidget(
-        connection_group
     );
 
     QGroupBox *send_group =
@@ -283,15 +246,6 @@ void QtViewRS485::setup_ui()
     );
 
     QObject::connect(
-        connect_button,
-        &QPushButton::clicked,
-        [this]()
-        {
-            on_connect_clicked();
-        }
-    );
-
-    QObject::connect(
         browse_button,
         &QPushButton::clicked,
         [this]()
@@ -342,16 +296,18 @@ void QtViewRS485::set_driver_controls_enabled(
     subscribe_button->setEnabled(enabled);
 }
 
-void QtViewRS485::on_connect_clicked()
+void QtViewRS485::connect_to_microservice()
 {
     const QString endpoint =
-        driver_endpoint_input->text().trimmed();
+        QString::fromLatin1(
+            DEFAULT_RS485_SERVICE_ADDRESS
+        );
 
     try
     {
         const bool connected =
             rs485_client_->connect(
-                endpoint.toStdString()
+                DEFAULT_RS485_SERVICE_ADDRESS
             );
 
         if (connected)
@@ -369,7 +325,8 @@ void QtViewRS485::on_connect_clicked()
 
             status_label->setText(
                 "Статус: не удалось подключиться "
-                "к микросервису"
+                "к микросервису "
+                + endpoint
             );
         }
     }

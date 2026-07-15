@@ -13,6 +13,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(Protobuf REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
 find_package(Threads REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 find_program(
     PROTOC_EXECUTABLE
@@ -174,6 +175,8 @@ add_executable(
     common/rs485_utils.cpp
     common/rs485_file_reader.cpp
 
+    config/rs485_config.cpp
+
     service/rs485_service.cpp
     service/main.cpp
 )
@@ -183,6 +186,7 @@ target_include_directories(
     PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/client"
         "${CMAKE_CURRENT_SOURCE_DIR}/common"
+        "${CMAKE_CURRENT_SOURCE_DIR}/config"
         "${CMAKE_CURRENT_SOURCE_DIR}/service"
 )
 
@@ -192,6 +196,7 @@ target_link_libraries(
         rs485_driver_proto
         rs485_service_proto
         Threads::Threads
+        yaml-cpp
 )
 
 if(

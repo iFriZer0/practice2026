@@ -13,9 +13,7 @@ PROJECT_DIR="$(
 )"
 
 EXECUTABLE="${PROJECT_DIR}/build/rs485_microservice"
-
-DRIVER_ENDPOINT="${1:-127.0.0.1:50051}"
-SERVICE_ENDPOINT="${2:-0.0.0.0:50052}"
+CONFIG_PATH="${1:-${PROJECT_DIR}/config/config.yaml}"
 
 if [[ ! -x "${EXECUTABLE}" ]]
 then
@@ -24,6 +22,12 @@ then
     exit 1
 fi
 
-exec "${EXECUTABLE}" \
-    "${DRIVER_ENDPOINT}" \
-    "${SERVICE_ENDPOINT}"
+if [[ ! -f "${CONFIG_PATH}" ]]
+then
+    echo "RS-485 config file was not found: ${CONFIG_PATH}"
+    exit 1
+fi
+
+export RS485_CONFIG_PATH="${CONFIG_PATH}"
+
+exec "${EXECUTABLE}"

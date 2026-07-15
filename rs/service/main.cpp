@@ -1,29 +1,53 @@
+#include "rs485_config.h"
 #include "rs485_driver_client.h"
 #include "rs485_service.h"
 
 #include <grpcpp/grpcpp.h>
 
+#include <cstdlib>
 #include <exception>
 #include <iostream>
 #include <memory>
 #include <string>
 
-int main(
-    int argc,
-    char *argv[])
+namespace
 {
-    const std::string driver_endpoint =
-        argc > 1
-            ? argv[1]
-            : "127.0.0.1:50051";
 
-    const std::string service_endpoint =
-        argc > 2
-            ? argv[2]
-            : "0.0.0.0:50052";
+constexpr const char *DEFAULT_CONFIG_PATH =
+    "config/config.yaml";
 
+std::string resolveConfigPath()
+{
+    const char *const environment_path =
+        std::getenv("RS485_CONFIG_PATH");
+
+    if (environment_path != nullptr &&
+        environment_path[0] != '\0')
+    {
+        return environment_path;
+    }
+
+    return DEFAULT_CONFIG_PATH;
+}
+
+} // namespace
+
+int main()
+{
     try
     {
+        const std::string config_path =
+            resolveConfigPath();
+
+        const Rs485Config config =
+            Rs485Config::load(config_path);
+
+        const std::string driver_endpoint =
+            config.driverAddress();
+
+        const std::string service_endpoint =
+            config.serviceAddress();
+
         auto driver_client =
             std::make_shared<Rs485DriverClient>();
 
@@ -51,15 +75,18 @@ int main(
 
         if (!server)
         {
-            std::cerr
-                << "Failed to start the RS-485 microservice"
-                << std::endl;
-
-            return 1;
+            throw std::runtime_error(
+                "Failed to start the RS-485 microservice"
+            );
         }
 
         std::cout
             << "RS-485 microservice started"
+            << std::endl;
+
+        std::cout
+            << "Config path: "
+            << config_path
             << std::endl;
 
         std::cout

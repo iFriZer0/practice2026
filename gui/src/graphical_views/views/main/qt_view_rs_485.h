@@ -48,15 +48,15 @@ public:
 
 private:
     static constexpr int NOT_FOUND{-1};
+    static constexpr const char *DEFAULT_RS485_SERVICE_ADDRESS{
+        "127.0.0.1:50052"
+    };
 
     QWidget *central_widget{nullptr};
     QStackedWidget *stacked_widget{nullptr};
 
     std::shared_ptr<Rs485MicroserviceClient>
         rs485_client_;
-
-    QLineEdit *driver_endpoint_input{nullptr};
-    QPushButton *connect_button{nullptr};
 
     QSpinBox *channel_input{nullptr};
 
@@ -91,7 +91,7 @@ private:
         bool enabled
     );
 
-    void on_connect_clicked();
+    void connect_to_microservice();
 
     void on_browse_clicked();
 
