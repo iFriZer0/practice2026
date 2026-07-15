@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package rs485.driver.v1;
+
+import "google/protobuf/empty.proto";
+
+// Коды ошибок обмена с пультом/прибором по RS-485.
+enum PultErrors {
+  // Ошибок нет: запрос успешно отправлен.
+  NO_ERROR         = 0;
+  // Неверный ID моста/преобразователя RS-485. Зарезервировано: в текущей
+  // реализации драйвера нигде не выставляется.
+  WRONG_BRIDGE_ID  = 1;
+  // Нет ответа от транспорта: сбой при отправке/приёме через network_driver.
+  NO_REPLY         = 2;
+  // Неверный интерфейс (или канал, судя по изначальной реализации драйвера, где под интерфейсом понимался канал).
+  // Зарезервировано: в текущей реализации драйвера нигде не выставляется.
+  WRONG_INTERFACE  = 3;
+  // Истёк таймаут ожидания ответа прибора при операции чтения (значение задаётся в конфиге).
+  TIMEOUT          = 4;
+  // Ответ получен, но короче 8 байт заголовка MAP — полезной нагрузки нет.
+  EMPTY_BUFFER     = 5;
+  // Некорректные параметры запроса (например, блок настроек размером не 64 байта).
+  WRONG_PARAM      = 6;
+}
+
+// Запрос на отправку данных устройству
+message SendDataRequest {
+  uint32 channel_id = 1;
+  bytes data = 2;
+}
+
+// Ответ на отправку данных
+message SendDataResponce {
+  bool success = 1;
+  uint32 channel_id = 2;
+  PultErrors error_message = 3;
+}
+
+// Ответ, передающий клиенту массив данных, принятых с прибора
+message ReceiveDataResponse {
+  bool success = 1;
+  uint32 channel_id = 2;
+  repeated bytes data = 3;       // массив пакетов данных, полученных с прибора
+  PultErrors error_message = 4;
+}
+
+service Rs485Driver {
+  // Отправка данных устройству (двунаправленный стрим запрос/ответ)
+  rpc SendData (stream SendDataRequest) returns (stream SendDataResponce);
+
+  // Подписка на прием данных с прибора: клиент один раз отправляет запрос,
+  // сервер непрерывно стримит клиенту массивы данных по мере их поступления
+  rpc Subscribe (google.protobuf.Empty) returns (stream ReceiveDataResponse);
+}
