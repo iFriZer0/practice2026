@@ -73,6 +73,7 @@ public:
             pku::driver::v1::VersionInfo *response
     ) override;
 private:
+    static constexpr std::size_t DESCRIPTION_SIZE{120};
     static constexpr std::size_t MAC_SIZE{6};
     static constexpr std::size_t ADDRESS_SIZE{4};
 
@@ -95,6 +96,8 @@ private:
     std::string convert_main_information() const;
 
     std::string convert_buffer_size(const std::uint32_t &buffer_size) const;
+
+    std::string convert_description(const std::string &description) const;
 
     std::string convert_mac(const std::string &mac) const;
 

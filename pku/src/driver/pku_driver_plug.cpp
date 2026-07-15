@@ -91,12 +91,12 @@ grpc::Status PkuDriverPlug::WriteMainInfo(
         pku::driver::v1::StandardResponse *response
 )
 {
-    main_information.description.replace(0, request->description().size(), request->description());
-    main_information.mac = convert_mac(request->mac());
-    main_information.ip = convert_address(request->ip());
-    main_information.netmask = convert_address(request->netmask());
-    main_information.gateway = convert_address(request->gateway());
-    main_information.dns = convert_address(request->dns());
+    main_information.description.assign(convert_description(request->description()), 0, DESCRIPTION_SIZE);
+    main_information.mac.assign(convert_mac(request->mac()), 0, MAC_SIZE);
+    main_information.ip.assign(convert_address(request->ip()), 0, ADDRESS_SIZE);
+    main_information.netmask.assign(convert_address(request->netmask()), 0, ADDRESS_SIZE);
+    main_information.gateway.assign(convert_address(request->gateway()), 0, ADDRESS_SIZE);
+    main_information.dns.assign(convert_address(request->dns()), 0, ADDRESS_SIZE);
     main_information.use_dhcp = request->use_dhcp();
     response->set_success(true);
     response->set_error_message("");
@@ -173,6 +173,13 @@ std::string PkuDriverPlug::convert_buffer_size(const std::uint32_t &buffer_size)
 {
     std::array<char, sizeof(std::uint32_t)> bits{std::bit_cast<std::array<char, sizeof(std::uint32_t)>>(buffer_size)};
     return std::string{bits.begin(), bits.end()};
+}
+
+std::string PkuDriverPlug::convert_description(const std::string &description) const
+{
+    std::string result{description, 0, DESCRIPTION_SIZE};
+    result.resize(DESCRIPTION_SIZE);
+    return result;
 }
 
 std::string PkuDriverPlug::convert_mac(const std::string &mac) const

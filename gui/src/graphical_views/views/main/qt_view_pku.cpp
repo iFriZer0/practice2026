@@ -19,6 +19,8 @@
 #include <QGridLayout>
 #include <QRegularExpressionValidator>
 #include <QRegularExpression>
+#include <QLatin1Char>
+#include <QByteArray>
 #include <grpcpp/grpcpp.h>
 #include <sstream>
 #include <string>
@@ -78,6 +80,55 @@ QRegularExpressionValidator *QtViewPKU::create_regular_expression_validator(cons
     return regular_expression_validator;
 }
 
+QScrollArea *QtViewPKU::create_scroll_area(QWidget *const parent) const noexcept
+{
+    QScrollArea *scroll_area{nullptr};
+    try {
+        scroll_area = new QScrollArea{parent};
+    }
+    catch (const std::bad_alloc &) {
+        std::cerr << "Не удалось создать QScrollArea" << std::endl;
+    }
+    return scroll_area;
+}
+
+QString QtViewPKU::parse_mac(const QString &mac) const noexcept
+{
+    QString result;
+    try {
+        QByteArray bytes{mac.toLatin1()};
+        result = QString{"%1:%2:%3:%4:%5:%6"}
+                .arg(static_cast<unsigned char>(bytes[0]), 2, 16, QLatin1Char{'0'})
+                .arg(static_cast<unsigned char>(bytes[1]), 2, 16, QLatin1Char{'0'})
+                .arg(static_cast<unsigned char>(bytes[2]), 2, 16, QLatin1Char{'0'})
+                .arg(static_cast<unsigned char>(bytes[3]), 2, 16, QLatin1Char{'0'})
+                .arg(static_cast<unsigned char>(bytes[4]), 2, 16, QLatin1Char{'0'})
+                .arg(static_cast<unsigned char>(bytes[5]), 2, 16, QLatin1Char{'0'})
+                .toUpper();
+    }
+    catch (const std::bad_alloc &) {
+        std::cerr << "Не удалось преобразовать MAC-адрес." << std::endl;
+    }
+    return result;
+}
+
+QString QtViewPKU::parse_address(const QString &address) const noexcept
+{
+    QString result;
+    try {
+        QByteArray bytes{address.toLatin1()};
+        result = QString{"%1.%2.%3.%4"}
+                .arg(static_cast<unsigned char>(bytes[0]))
+                .arg(static_cast<unsigned char>(bytes[1]))
+                .arg(static_cast<unsigned char>(bytes[2]))
+                .arg(static_cast<unsigned char>(bytes[3]));
+    }
+    catch (const std::bad_alloc &) {
+        std::cerr << "Не удалось преобразовать IP-адрес." << std::endl;
+    }
+    return result;
+}
+
 std::string read_pku_service_address() {
     std::ifstream file("../../pku/src/configuration/pku_service_address.txt");
     std::string ip;
@@ -92,14 +143,17 @@ std::string read_pku_service_address() {
 }
 
 QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget) noexcept
-    : stacked_widget{stacked_widget}
+    : central_widget{create_widget()}, stacked_widget{stacked_widget}
 {
+    QScrollArea *scroll_area{create_scroll_area()};
+    scroll_area->setWidgetResizable(true);
+    scroll_area->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
     std::string target_address = read_pku_service_address();
-    std::cout << target_address << std::endl;
     channel_ = grpc::CreateChannel(target_address, grpc::InsecureChannelCredentials());
 
-    central_widget = create_widget();
-    QVBoxLayout *main_layout = create_v_box_layout(central_widget);
+    QWidget *content_widget{create_widget()};
+    QVBoxLayout *main_layout{create_v_box_layout(content_widget)};
 
     main_layout->addWidget(create_label("Пульт контроля и управления (РК/ПКУ)"));
     main_layout->addWidget(create_label("<b>Статус и связь</b>"));
@@ -349,6 +403,7 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget) noexcept
 
         if (status.ok()) {
             if (!response.success()) {
+                lbl_read_main_status->setText("Ошибка");
                 pku_log->append(QString::fromStdString("Ошибка: \"" + response.result_text() + "\""));
             } else {
                 QStringList parts = QString::fromStdString(response.result_text()).split(';');
@@ -357,11 +412,11 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget) noexcept
                     pku_log->append("Идентификатор модуля: " + parts[0]);
                     pku_log->append("Размер буфера на приём: " + parts[1]);
                     pku_log->append("Описание модуля: " + parts[2]);
-                    pku_log->append("MAC-адрес: " + parts[3]);
-                    pku_log->append("IP-адрес: " + parts[4]);
-                    pku_log->append("Маска подсети: " + parts[5]);
-                    pku_log->append("Основной шлюз: " + parts[6]);
-                    pku_log->append("DNS-сервер: " + parts[7]);
+                    pku_log->append("MAC-адрес: " + parse_mac(parts[3]));
+                    pku_log->append("IP-адрес: " + parse_address(parts[4]));
+                    pku_log->append("Маска подсети: " + parse_address(parts[5]));
+                    pku_log->append("Основной шлюз: " + parse_address(parts[6]));
+                    pku_log->append("DNS-сервер: " + parse_address(parts[7]));
                     pku_log->append("Флаг \"Использовать DHCP\": " + parts[8]);
                     lbl_read_main_status->setText("Успешно прочитано");
                 } else {
@@ -389,7 +444,7 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget) noexcept
 
             api::CommandRequest request;
             request.set_command_id(4);
-            request.set_command_param((description + ";" + mac + ";" + ip + ";" + mask + ";" + gateway + ";" + dhcp + "op_id").toStdString());
+            request.set_command_param((description + ";" + mac + ";" + ip + ";" + mask + ";" + gateway + ";" + dns + ";" + dhcp + ";" + "op_id").toStdString());
 
             api::CommandResponse response;
             grpc::ClientContext context;
@@ -438,7 +493,6 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget) noexcept
                     ++index;
                 }
             }
-
         } else {
             lbl_read_pku_status->setText("Ошибка сети");
         }
@@ -508,7 +562,11 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget) noexcept
         }
     });
 
-    central_widget->setLayout(main_layout);
+    content_widget->setLayout(main_layout);
+    scroll_area->setWidget(content_widget);
+    QVBoxLayout *outer_layout{create_v_box_layout(central_widget)};
+    outer_layout->addWidget(scroll_area);
+    central_widget->setLayout(outer_layout);
 }
 
 void QtViewPKU::show() {

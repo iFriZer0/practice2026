@@ -17,7 +17,9 @@
 #include <QCheckBox>
 #include <QRegularExpressionValidator>
 #include <QRegularExpression>
+#include <QScrollArea>
 #include <memory>
+#include <string>
 #include "view.h"
 namespace grpc {
 class ChannelInterface;
@@ -45,10 +47,6 @@ private:
     QTextEdit *create_text_edit(QWidget *const parent) const;
     QPushButton *create_button(const QString &text, QWidget *const parent) const;
     QComboBox *create_multi_select_combo_box(QWidget *const parent, int count) const;
-
-    QWidget *central_widget;
-    QStackedWidget *stacked_widget;
-
     QWidget *create_widget() const;
     QVBoxLayout *create_v_box_layout(QWidget *const parent) const;
     QLabel *create_label(const QString &text) const;
@@ -56,6 +54,13 @@ private:
     QGridLayout *create_grid_layout(QWidget *const parent = nullptr) const noexcept;
     QCheckBox *create_check_box(const QString &text, QWidget *const parent = nullptr) const noexcept;
     QRegularExpressionValidator *create_regular_expression_validator(const QRegularExpression &re, QObject *const parent = nullptr) const noexcept;
+    QScrollArea *create_scroll_area(QWidget *const parent = nullptr) const noexcept;
+
+    QString parse_mac(const QString &mac) const noexcept;
+    QString parse_address(const QString &address) const noexcept;
+
+    QWidget *central_widget;
+    QStackedWidget *stacked_widget;
 
     std::shared_ptr<grpc::ChannelInterface> channel_;
 };
