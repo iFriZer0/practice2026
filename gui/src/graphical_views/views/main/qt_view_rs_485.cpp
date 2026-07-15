@@ -53,7 +53,9 @@ void QtViewRS485::show()
 void QtViewRS485::setup_ui()
 {
     QVBoxLayout *main_layout =
-        create_v_box_layout(central_widget);
+        create_v_box_layout(
+            central_widget
+        );
 
     main_layout->addWidget(
         create_label("RS-485")
@@ -66,7 +68,9 @@ void QtViewRS485::setup_ui()
         );
 
     QVBoxLayout *send_layout =
-        new QVBoxLayout(send_group);
+        new QVBoxLayout(
+            send_group
+        );
 
     QHBoxLayout *send_settings_layout =
         new QHBoxLayout();
@@ -76,9 +80,15 @@ void QtViewRS485::setup_ui()
     );
 
     channel_input =
-        new QSpinBox(send_group);
+        new QSpinBox(
+            send_group
+        );
 
-    channel_input->setRange(0, 15);
+    channel_input->setRange(
+        0,
+        15
+    );
+
     channel_input->setValue(0);
 
     send_settings_layout->addWidget(
@@ -99,7 +109,9 @@ void QtViewRS485::setup_ui()
     );
 
     bytes_input =
-        new QLineEdit(send_group);
+        new QLineEdit(
+            send_group
+        );
 
     bytes_input->setPlaceholderText(
         "Например: 01 02 AA FF"
@@ -121,9 +133,12 @@ void QtViewRS485::setup_ui()
     );
 
     file_path_input =
-        new QLineEdit(send_group);
+        new QLineEdit(
+            send_group
+        );
 
     file_path_input->setReadOnly(true);
+
     file_path_input->setPlaceholderText(
         "Файл не выбран"
     );
@@ -167,7 +182,9 @@ void QtViewRS485::setup_ui()
         );
 
     QHBoxLayout *subscribe_layout =
-        new QHBoxLayout(subscribe_group);
+        new QHBoxLayout(
+            subscribe_group
+        );
 
     subscribe_button =
         new QPushButton(
@@ -193,10 +210,14 @@ void QtViewRS485::setup_ui()
         );
 
     QVBoxLayout *sent_layout =
-        new QVBoxLayout(sent_group);
+        new QVBoxLayout(
+            sent_group
+        );
 
     sent_log =
-        new QTextEdit(sent_group);
+        new QTextEdit(
+            sent_group
+        );
 
     sent_log->setReadOnly(true);
     sent_log->setMinimumHeight(180);
@@ -216,10 +237,14 @@ void QtViewRS485::setup_ui()
         );
 
     QVBoxLayout *received_layout =
-        new QVBoxLayout(received_group);
+        new QVBoxLayout(
+            received_group
+        );
 
     received_log =
-        new QTextEdit(received_group);
+        new QTextEdit(
+            received_group
+        );
 
     received_log->setReadOnly(true);
     received_log->setMinimumHeight(180);
@@ -371,8 +396,8 @@ void QtViewRS485::on_browse_clicked()
 
 void QtViewRS485::on_send_clicked()
 {
-    const uint32_t channel_id =
-        static_cast<uint32_t>(
+    const std::uint32_t channel_id =
+        static_cast<std::uint32_t>(
             channel_input->value()
         );
 
@@ -392,10 +417,11 @@ void QtViewRS485::on_send_clicked()
         if (!file_path.isEmpty())
         {
             result =
-                rs485_client_->sendDataFromFile(
-                    channel_id,
-                    file_path.toStdString()
-                );
+                rs485_client_->
+                    sendDataFromFile(
+                        channel_id,
+                        file_path.toStdString()
+                    );
 
             source_text =
                 "file: " + file_path;
@@ -421,6 +447,7 @@ void QtViewRS485::on_send_clicked()
         QString log_entry;
 
         log_entry += "channel_id: ";
+
         log_entry += QString::number(
             result.channel_id
         );
@@ -432,17 +459,23 @@ void QtViewRS485::on_send_clicked()
         log_entry += sent_data_text;
 
         log_entry += "\nsuccess: ";
+
         log_entry +=
-            result.success ? "true" : "false";
+            result.success
+                ? "true"
+                : "false";
 
         log_entry += "\nmessage: ";
+
         log_entry += QString::fromStdString(
             result.error_message
         );
 
         log_entry += "\n";
 
-        append_sent_log(log_entry);
+        append_sent_log(
+            log_entry
+        );
 
         if (result.success)
         {
@@ -469,7 +502,8 @@ void QtViewRS485::on_send_clicked()
             + (
                 file_path.isEmpty()
                     ? QString{"manual input"}
-                    : QString{"file: "} + file_path
+                    : QString{"file: "}
+                        + file_path
               )
             + "\ndata: "
             + sent_data_text
@@ -496,6 +530,10 @@ void QtViewRS485::on_subscribe_clicked()
         try
         {
             rs485_client_->startSubscribe(
+                /*
+                 * Callback для очередного пакета
+                 * или сообщения об ошибке.
+                 */
                 [this](
                     const Rs485ReceiveResult &result
                 )
@@ -507,6 +545,46 @@ void QtViewRS485::on_subscribe_clicked()
                             handle_received_data(
                                 result
                             );
+                        },
+                        Qt::QueuedConnection
+                    );
+                },
+
+                /*
+                 * Callback фактического завершения
+                 * gRPC-потока подписки.
+                 */
+                [this]()
+                {
+                    QMetaObject::invokeMethod(
+                        central_widget,
+                        [this]()
+                        {
+                            subscribed = false;
+
+                            subscribe_button->setText(
+                                "Запустить подписку"
+                            );
+
+                            append_received_log(
+                                "Subscribe finished.\n"
+                            );
+
+                            /*
+                             * Не заменяем уже показанное
+                             * сообщение об ошибке общим
+                             * текстом о завершении.
+                             */
+                            if (!status_label->text().
+                                    startsWith(
+                                        "Статус: ошибка приема"
+                                    ))
+                            {
+                                status_label->setText(
+                                    "Статус: подписка "
+                                    "завершена"
+                                );
+                            }
                         },
                         Qt::QueuedConnection
                     );
@@ -531,6 +609,10 @@ void QtViewRS485::on_subscribe_clicked()
         catch (const std::exception &error)
         {
             subscribed = false;
+
+            subscribe_button->setText(
+                "Запустить подписку"
+            );
 
             status_label->setText(
                 "Статус: "
@@ -579,27 +661,35 @@ void QtViewRS485::handle_received_data(
     QString log_entry;
 
     log_entry += "channel_id: ";
+
     log_entry += QString::number(
         result.channel_id
     );
 
     log_entry += "\nsuccess: ";
+
     log_entry +=
-        result.success ? "true" : "false";
+        result.success
+            ? "true"
+            : "false";
 
     log_entry += "\ndata: ";
+
     log_entry += bytes_to_hex(
         result.data
     );
 
     log_entry += "\nmessage: ";
+
     log_entry += QString::fromStdString(
         result.error_message
     );
 
     log_entry += "\n";
 
-    append_received_log(log_entry);
+    append_received_log(
+        log_entry
+    );
 
     if (result.success)
     {
@@ -619,7 +709,7 @@ void QtViewRS485::handle_received_data(
 }
 
 QString QtViewRS485::bytes_to_hex(
-    const std::vector<uint8_t> &bytes
+    const std::vector<std::uint8_t> &bytes
 )
 {
     QString result;
@@ -660,7 +750,8 @@ void QtViewRS485::append_received_log(
     received_log->append(text);
 }
 
-QWidget *QtViewRS485::create_widget() const
+QWidget *QtViewRS485::
+create_widget() const
 {
     QWidget *widget{nullptr};
 
@@ -678,7 +769,8 @@ QWidget *QtViewRS485::create_widget() const
     return widget;
 }
 
-QVBoxLayout *QtViewRS485::create_v_box_layout(
+QVBoxLayout *
+QtViewRS485::create_v_box_layout(
     QWidget *const parent
 ) const
 {
@@ -686,7 +778,10 @@ QVBoxLayout *QtViewRS485::create_v_box_layout(
 
     try
     {
-        layout = new QVBoxLayout{parent};
+        layout =
+            new QVBoxLayout{
+                parent
+            };
     }
     catch (const std::bad_alloc &)
     {
@@ -706,7 +801,10 @@ QLabel *QtViewRS485::create_label(
 
     try
     {
-        label = new QLabel{text};
+        label =
+            new QLabel{
+                text
+            };
     }
     catch (const std::bad_alloc &)
     {

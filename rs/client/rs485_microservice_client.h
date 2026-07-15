@@ -1,6 +1,9 @@
 #ifndef RS485_MICROSERVICE_CLIENT_H__
 #define RS485_MICROSERVICE_CLIENT_H__
 
+#include "rs485_gui_types.h"
+#include "rs485_service.grpc.pb.h"
+
 #include <atomic>
 #include <cstdint>
 #include <functional>
@@ -12,9 +15,6 @@
 
 #include <grpcpp/grpcpp.h>
 
-#include "rs485_gui_types.h"
-#include "rs485_service.grpc.pb.h"
-
 class Rs485MicroserviceClient
 {
 public:
@@ -23,8 +23,10 @@ public:
             void(const Rs485ReceiveResult &)
         >;
 
-    Rs485MicroserviceClient();
+    using SubscriptionFinishedCallback =
+        std::function<void()>;
 
+    Rs485MicroserviceClient();
     ~Rs485MicroserviceClient();
 
     Rs485MicroserviceClient(
@@ -52,27 +54,33 @@ public:
     bool isConnected() const noexcept;
 
     Rs485SendResult sendData(
-        uint32_t channel_id,
+        std::uint32_t channel_id,
         const std::string &bytes_text
     );
 
     Rs485SendResult sendData(
-        uint32_t channel_id,
-        const std::vector<uint8_t> &bytes
+        std::uint32_t channel_id,
+        const std::vector<std::uint8_t> &bytes
     );
 
     Rs485SendResult sendDataFromFile(
-        uint32_t channel_id,
+        std::uint32_t channel_id,
         const std::string &file_path
     );
 
     void startSubscribe(
-        ReceiveCallback callback
+        ReceiveCallback receive_callback,
+        SubscriptionFinishedCallback
+            finished_callback
     );
 
     void stopSubscribe();
 
+    bool isSubscribed() const noexcept;
+
 private:
+    void subscribeLoop();
+
     std::string endpoint_;
 
     std::shared_ptr<grpc::Channel> channel_;
@@ -81,18 +89,21 @@ private:
         rs485::service::v1::Rs485Service::Stub
     > stub_;
 
-    std::atomic<bool> subscribed_{false};
-
-    std::thread subscribe_thread_;
-
-    std::mutex subscribe_mutex_;
-
     std::unique_ptr<grpc::ClientContext>
         subscribe_context_;
 
+    std::thread subscribe_thread_;
+
+    std::atomic_bool subscribed_{false};
+
+    std::atomic_bool stop_requested_{false};
+
+    mutable std::mutex subscribe_mutex_;
+
     ReceiveCallback receive_callback_;
 
-    void subscribeLoop();
+    SubscriptionFinishedCallback
+        subscription_finished_callback_;
 };
 
 #endif

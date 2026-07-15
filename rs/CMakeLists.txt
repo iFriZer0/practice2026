@@ -10,20 +10,38 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-find_package(Protobuf REQUIRED)
-find_package(gRPC CONFIG REQUIRED)
-find_package(Threads REQUIRED)
-find_package(yaml-cpp REQUIRED)
+option(
+    RS485_BUILD_TESTING
+    "Build RS-485 fake driver and test client"
+    OFF
+)
 
-find_program(
-    PROTOC_EXECUTABLE
-    protoc
+find_package(
+    Protobuf
+    CONFIG
     REQUIRED
 )
 
-find_program(
-    GRPC_CPP_PLUGIN
-    grpc_cpp_plugin
+find_package(
+    gRPC
+    CONFIG
+    REQUIRED
+)
+
+find_package(
+    absl
+    CONFIG
+    REQUIRED
+)
+
+find_package(
+    Threads
+    REQUIRED
+)
+
+find_package(
+    yaml-cpp
+    CONFIG
     REQUIRED
 )
 
@@ -76,6 +94,32 @@ set(
     "${RS485_GENERATED_DIR}/rs485_service.grpc.pb.h"
 )
 
+if(TARGET protobuf::protoc)
+    set(
+        RS485_PROTOC_EXECUTABLE
+        "$<TARGET_FILE:protobuf::protoc>"
+    )
+else()
+    find_program(
+        RS485_PROTOC_EXECUTABLE
+        protoc
+        REQUIRED
+    )
+endif()
+
+if(TARGET gRPC::grpc_cpp_plugin)
+    set(
+        RS485_GRPC_CPP_PLUGIN
+        "$<TARGET_FILE:gRPC::grpc_cpp_plugin>"
+    )
+else()
+    find_program(
+        RS485_GRPC_CPP_PLUGIN
+        grpc_cpp_plugin
+        REQUIRED
+    )
+endif()
+
 add_custom_command(
     OUTPUT
         ${RS485_DRIVER_GENERATED_SOURCES}
@@ -84,19 +128,22 @@ add_custom_command(
         ${RS485_SERVICE_GENERATED_HEADERS}
 
     COMMAND
-        "${PROTOC_EXECUTABLE}"
+        "${RS485_PROTOC_EXECUTABLE}"
 
     ARGS
         "--proto_path=${RS485_API_DIR}"
         "--cpp_out=${RS485_GENERATED_DIR}"
         "--grpc_out=${RS485_GENERATED_DIR}"
-        "--plugin=protoc-gen-grpc=${GRPC_CPP_PLUGIN}"
+        "--plugin=protoc-gen-grpc=${RS485_GRPC_CPP_PLUGIN}"
         "${RS485_DRIVER_PROTO}"
         "${RS485_SERVICE_PROTO}"
 
     DEPENDS
         "${RS485_DRIVER_PROTO}"
         "${RS485_SERVICE_PROTO}"
+
+    COMMENT
+        "Generating RS-485 protobuf and gRPC sources"
 
     VERBATIM
 )
@@ -116,6 +163,7 @@ add_library(
     STATIC
 
     ${RS485_DRIVER_GENERATED_SOURCES}
+    ${RS485_DRIVER_GENERATED_HEADERS}
 )
 
 add_dependencies(
@@ -128,7 +176,6 @@ target_include_directories(
     SYSTEM
     PUBLIC
         "${RS485_GENERATED_DIR}"
-        ${Protobuf_INCLUDE_DIRS}
 )
 
 target_link_libraries(
@@ -136,6 +183,9 @@ target_link_libraries(
     PUBLIC
         gRPC::grpc++
         protobuf::libprotobuf
+
+        absl::log
+        absl::check
 )
 
 add_library(
@@ -143,6 +193,7 @@ add_library(
     STATIC
 
     ${RS485_SERVICE_GENERATED_SOURCES}
+    ${RS485_SERVICE_GENERATED_HEADERS}
 )
 
 add_dependencies(
@@ -155,7 +206,6 @@ target_include_directories(
     SYSTEM
     PUBLIC
         "${RS485_GENERATED_DIR}"
-        ${Protobuf_INCLUDE_DIRS}
 )
 
 target_link_libraries(
@@ -163,6 +213,9 @@ target_link_libraries(
     PUBLIC
         gRPC::grpc++
         protobuf::libprotobuf
+
+        absl::log
+        absl::check
 )
 
 add_executable(
@@ -195,22 +248,57 @@ target_link_libraries(
     PRIVATE
         rs485_driver_proto
         rs485_service_proto
+
         Threads::Threads
         yaml-cpp
 )
 
-if(
-    EXISTS
-        "${CMAKE_CURRENT_SOURCE_DIR}/fake_driver/fake_rs485_driver.cpp"
-    AND
-    EXISTS
-        "${CMAKE_CURRENT_SOURCE_DIR}/fake_driver/main.cpp"
-)
+if(RS485_BUILD_TESTING)
+    set(
+        RS485_FAKE_DRIVER_SOURCES
+        "fake_driver/fake_rs485_driver.cpp"
+        "fake_driver/main.cpp"
+    )
+
+    set(
+        RS485_TEST_CLIENT_SOURCES
+        "test_client/main.cpp"
+    )
+
+    foreach(
+        RS485_REQUIRED_SOURCE
+        IN LISTS
+            RS485_FAKE_DRIVER_SOURCES
+            RS485_TEST_CLIENT_SOURCES
+    )
+        if(
+            NOT EXISTS
+            "${CMAKE_CURRENT_SOURCE_DIR}/${RS485_REQUIRED_SOURCE}"
+        )
+            message(
+                FATAL_ERROR
+                "Required RS-485 testing source was not found: "
+                "${RS485_REQUIRED_SOURCE}"
+            )
+        endif()
+    endforeach()
+
+    if(
+        NOT EXISTS
+        "${CMAKE_CURRENT_SOURCE_DIR}/fake_driver/fake_rs485_driver.h"
+    )
+        message(
+            FATAL_ERROR
+            "Required RS-485 testing header was not found: "
+            "fake_driver/fake_rs485_driver.h"
+        )
+    endif()
+
     add_executable(
         rs485_fake_driver
 
-        fake_driver/fake_rs485_driver.cpp
-        fake_driver/main.cpp
+        fake_driver/fake_rs485_driver.h
+        ${RS485_FAKE_DRIVER_SOURCES}
     )
 
     target_include_directories(
@@ -225,16 +313,11 @@ if(
             rs485_driver_proto
             Threads::Threads
     )
-endif()
 
-if(
-    EXISTS
-        "${CMAKE_CURRENT_SOURCE_DIR}/test_client/main.cpp"
-)
     add_executable(
         rs485_test_client
 
-        test_client/main.cpp
+        ${RS485_TEST_CLIENT_SOURCES}
     )
 
     target_link_libraries(

@@ -3,6 +3,8 @@
 #include "rs485_driver_client.h"
 #include "rs485_errors.h"
 
+#include <algorithm>
+#include <cctype>
 #include <chrono>
 #include <condition_variable>
 #include <cstdint>
@@ -92,36 +94,72 @@ serviceCodeFromReceiveError(
     using ServiceError =
         rs485::service::v1::ErrorCode;
 
-    if (message.find("gRPC error 14") !=
-            std::string::npos ||
-        message.find("Socket closed") !=
-            std::string::npos ||
-        message.find("Connection refused") !=
-            std::string::npos)
+    std::string normalized_message =
+        message;
+
+    std::transform(
+        normalized_message.begin(),
+        normalized_message.end(),
+        normalized_message.begin(),
+        [](unsigned char character)
+        {
+            return static_cast<char>(
+                std::tolower(character)
+            );
+        }
+    );
+
+    if (normalized_message.find(
+            "grpc error 14"
+        ) != std::string::npos ||
+        normalized_message.find(
+            "socket closed"
+        ) != std::string::npos ||
+        normalized_message.find(
+            "connection refused"
+        ) != std::string::npos ||
+        normalized_message.find(
+            "failed to connect"
+        ) != std::string::npos ||
+        normalized_message.find(
+            "unavailable"
+        ) != std::string::npos)
     {
-        return ServiceError::DRIVER_NOT_CONNECTED;
+        return ServiceError::
+            DRIVER_NOT_CONNECTED;
     }
 
-    if (message.find("No reply") !=
-        std::string::npos)
+    if (normalized_message.find(
+            "no reply"
+        ) != std::string::npos)
     {
-        return ServiceError::DRIVER_NO_REPLY;
+        return ServiceError::
+            DRIVER_NO_REPLY;
     }
 
-    if (message.find("timed out") !=
-            std::string::npos ||
-        message.find("timeout") !=
-            std::string::npos ||
-        message.find("deadline") !=
-            std::string::npos)
+    if (normalized_message.find(
+            "timed out"
+        ) != std::string::npos ||
+        normalized_message.find(
+            "timeout"
+        ) != std::string::npos ||
+        normalized_message.find(
+            "deadline"
+        ) != std::string::npos)
     {
-        return ServiceError::DRIVER_TIMEOUT;
+        return ServiceError::
+            DRIVER_TIMEOUT;
     }
 
-    if (message.find("gRPC error 13") !=
-        std::string::npos)
+    if (normalized_message.find(
+            "grpc error 13"
+        ) != std::string::npos ||
+        normalized_message.find(
+            "internal"
+        ) != std::string::npos)
     {
-        return ServiceError::INTERNAL_ERROR;
+        return ServiceError::
+            INTERNAL_ERROR;
     }
 
     return ServiceError::DRIVER_ERROR;

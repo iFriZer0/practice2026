@@ -10,9 +10,11 @@
 #include <utility>
 #include <vector>
 
-Rs485MicroserviceClient::Rs485MicroserviceClient() = default;
+Rs485MicroserviceClient::
+Rs485MicroserviceClient() = default;
 
-Rs485MicroserviceClient::~Rs485MicroserviceClient()
+Rs485MicroserviceClient::
+~Rs485MicroserviceClient()
 {
     disconnect();
 }
@@ -74,14 +76,16 @@ void Rs485MicroserviceClient::disconnect()
     endpoint_.clear();
 }
 
-bool Rs485MicroserviceClient::isConnected() const noexcept
+bool Rs485MicroserviceClient::
+isConnected() const noexcept
 {
     return channel_ != nullptr &&
            stub_ != nullptr;
 }
 
-Rs485SendResult Rs485MicroserviceClient::sendData(
-    uint32_t channel_id,
+Rs485SendResult
+Rs485MicroserviceClient::sendData(
+    std::uint32_t channel_id,
     const std::string &bytes_text)
 {
     std::istringstream stream{
@@ -89,7 +93,7 @@ Rs485SendResult Rs485MicroserviceClient::sendData(
     };
 
     std::string token;
-    std::vector<uint8_t> bytes;
+    std::vector<std::uint8_t> bytes;
 
     while (stream >> token)
     {
@@ -133,7 +137,7 @@ Rs485SendResult Rs485MicroserviceClient::sendData(
         }
 
         bytes.push_back(
-            static_cast<uint8_t>(
+            static_cast<std::uint8_t>(
                 value
             )
         );
@@ -152,14 +156,16 @@ Rs485SendResult Rs485MicroserviceClient::sendData(
     );
 }
 
-Rs485SendResult Rs485MicroserviceClient::sendData(
-    uint32_t channel_id,
-    const std::vector<uint8_t> &bytes)
+Rs485SendResult
+Rs485MicroserviceClient::sendData(
+    std::uint32_t channel_id,
+    const std::vector<std::uint8_t> &bytes)
 {
     if (!isConnected())
     {
         throw std::runtime_error(
-            "The RS-485 microservice client is not connected"
+            "The RS-485 microservice client "
+            "is not connected"
         );
     }
 
@@ -171,7 +177,9 @@ Rs485SendResult Rs485MicroserviceClient::sendData(
     }
 
     const std::string binary_data(
-        reinterpret_cast<const char *>(bytes.data()),
+        reinterpret_cast<const char *>(
+            bytes.data()
+        ),
         bytes.size()
     );
 
@@ -203,13 +211,15 @@ Rs485SendResult Rs485MicroserviceClient::sendData(
 
     result.success = response.success();
     result.channel_id = response.channel_id();
-    result.error_message = response.error_message();
+    result.error_message =
+        response.error_message();
 
     return result;
 }
 
-Rs485SendResult Rs485MicroserviceClient::sendDataFromFile(
-    uint32_t channel_id,
+Rs485SendResult
+Rs485MicroserviceClient::sendDataFromFile(
+    std::uint32_t channel_id,
     const std::string &file_path)
 {
     if (file_path.empty())
@@ -252,13 +262,16 @@ Rs485SendResult Rs485MicroserviceClient::sendDataFromFile(
         );
     }
 
-    std::vector<uint8_t> bytes;
-    bytes.reserve(raw_data.size());
+    std::vector<std::uint8_t> bytes;
+
+    bytes.reserve(
+        raw_data.size()
+    );
 
     for (const char value : raw_data)
     {
         bytes.push_back(
-            static_cast<uint8_t>(
+            static_cast<std::uint8_t>(
                 static_cast<unsigned char>(
                     value
                 )
@@ -273,7 +286,9 @@ Rs485SendResult Rs485MicroserviceClient::sendDataFromFile(
 }
 
 void Rs485MicroserviceClient::startSubscribe(
-    ReceiveCallback callback)
+    ReceiveCallback receive_callback,
+    SubscriptionFinishedCallback
+        finished_callback)
 {
     if (!isConnected())
     {
@@ -283,16 +298,20 @@ void Rs485MicroserviceClient::startSubscribe(
         );
     }
 
-    if (!callback)
+    if (!receive_callback)
     {
         throw std::invalid_argument(
             "No RS-485 receive callback was provided"
         );
     }
 
-    std::lock_guard<std::mutex> lock{
-        subscribe_mutex_
-    };
+    if (!finished_callback)
+    {
+        throw std::invalid_argument(
+            "No RS-485 subscription completion "
+            "callback was provided"
+        );
+    }
 
     if (subscribed_)
     {
@@ -304,25 +323,47 @@ void Rs485MicroserviceClient::startSubscribe(
         subscribe_thread_.join();
     }
 
-    receive_callback_ = std::move(callback);
+    {
+        std::lock_guard<std::mutex> lock{
+            subscribe_mutex_
+        };
 
-    subscribe_context_ =
-        std::make_unique<grpc::ClientContext>();
+        receive_callback_ =
+            std::move(receive_callback);
 
-    subscribed_ = true;
+        subscription_finished_callback_ =
+            std::move(finished_callback);
+
+        subscribe_context_ =
+            std::make_unique<
+                grpc::ClientContext
+            >();
+
+        stop_requested_ = false;
+        subscribed_ = true;
+    }
 
     try
     {
         subscribe_thread_ = std::thread(
-            &Rs485MicroserviceClient::subscribeLoop,
+            &Rs485MicroserviceClient::
+                subscribeLoop,
             this
         );
     }
     catch (...)
     {
+        std::lock_guard<std::mutex> lock{
+            subscribe_mutex_
+        };
+
         subscribed_ = false;
+        stop_requested_ = false;
+
         subscribe_context_.reset();
         receive_callback_ = {};
+
+        subscription_finished_callback_ = {};
 
         throw;
     }
@@ -330,12 +371,13 @@ void Rs485MicroserviceClient::startSubscribe(
 
 void Rs485MicroserviceClient::stopSubscribe()
 {
+    stop_requested_ = true;
+    subscribed_ = false;
+
     {
         std::lock_guard<std::mutex> lock{
             subscribe_mutex_
         };
-
-        subscribed_ = false;
 
         if (subscribe_context_)
         {
@@ -345,15 +387,32 @@ void Rs485MicroserviceClient::stopSubscribe()
 
     if (subscribe_thread_.joinable())
     {
+        /*
+         * stopSubscribe не должен вызываться из самого
+         * subscribe_thread_. В текущей архитектуре он
+         * вызывается из GUI-потока или деструктора.
+         */
         subscribe_thread_.join();
     }
 
-    std::lock_guard<std::mutex> lock{
-        subscribe_mutex_
-    };
+    {
+        std::lock_guard<std::mutex> lock{
+            subscribe_mutex_
+        };
 
-    subscribe_context_.reset();
-    receive_callback_ = {};
+        subscribe_context_.reset();
+        receive_callback_ = {};
+
+        subscription_finished_callback_ = {};
+    }
+
+    stop_requested_ = false;
+}
+
+bool Rs485MicroserviceClient::
+isSubscribed() const noexcept
+{
+    return subscribed_;
 }
 
 void Rs485MicroserviceClient::subscribeLoop()
@@ -362,15 +421,13 @@ void Rs485MicroserviceClient::subscribeLoop()
 
     try
     {
-        rs485::service::v1::SubscribeRequest request;
-
-        grpc::ClientReader<
-            rs485::service::v1::ReceiveDataResponse
-        > *raw_reader = nullptr;
+        rs485::service::v1::SubscribeRequest
+            request;
 
         std::unique_ptr<
             grpc::ClientReader<
-                rs485::service::v1::ReceiveDataResponse
+                rs485::service::v1::
+                    ReceiveDataResponse
             >
         > reader;
 
@@ -379,7 +436,8 @@ void Rs485MicroserviceClient::subscribeLoop()
                 subscribe_mutex_
             };
 
-            if (!subscribe_context_ || !stub_)
+            if (!subscribe_context_ ||
+                !stub_)
             {
                 throw std::runtime_error(
                     "The RS-485 subscription context "
@@ -391,11 +449,9 @@ void Rs485MicroserviceClient::subscribeLoop()
                 subscribe_context_.get(),
                 request
             );
-
-            raw_reader = reader.get();
         }
 
-        if (raw_reader == nullptr)
+        if (!reader)
         {
             throw std::runtime_error(
                 "Failed to create the RS-485 "
@@ -407,12 +463,16 @@ void Rs485MicroserviceClient::subscribeLoop()
             response;
 
         while (subscribed_ &&
-               raw_reader->Read(&response))
+               reader->Read(&response))
         {
             Rs485ReceiveResult result;
 
-            result.success = response.success();
-            result.channel_id = response.channel_id();
+            result.success =
+                response.success();
+
+            result.channel_id =
+                response.channel_id();
+
             result.error_message =
                 response.error_message();
 
@@ -431,7 +491,8 @@ void Rs485MicroserviceClient::subscribeLoop()
                     subscribe_mutex_
                 };
 
-                callback = receive_callback_;
+                callback =
+                    receive_callback_;
             }
 
             if (callback)
@@ -443,13 +504,15 @@ void Rs485MicroserviceClient::subscribeLoop()
         }
 
         const grpc::Status status =
-            raw_reader->Finish();
+            reader->Finish();
+
 
         if (!status.ok() &&
             status.error_code() !=
                 grpc::StatusCode::CANCELLED)
         {
             final_result.success = false;
+
             final_result.error_message =
                 "RS-485 subscription gRPC error: " +
                 status.error_message();
@@ -458,33 +521,46 @@ void Rs485MicroserviceClient::subscribeLoop()
     catch (const std::exception &exception)
     {
         final_result.success = false;
+
         final_result.error_message =
             exception.what();
     }
     catch (...)
     {
         final_result.success = false;
+
         final_result.error_message =
             "Unknown RS-485 subscription error";
     }
 
     subscribed_ = false;
 
-    if (!final_result.error_message.empty())
+    ReceiveCallback receive_callback;
+
+    SubscriptionFinishedCallback
+        finished_callback;
+
     {
-        ReceiveCallback callback;
+        std::lock_guard<std::mutex> lock{
+            subscribe_mutex_
+        };
 
-        {
-            std::lock_guard<std::mutex> lock{
-                subscribe_mutex_
-            };
+        receive_callback =
+            receive_callback_;
 
-            callback = receive_callback_;
-        }
+        finished_callback =
+            subscription_finished_callback_;
+    }
 
-        if (callback)
-        {
-            callback(final_result);
-        }
+    if (!final_result.error_message.empty() &&
+        receive_callback)
+    {
+        receive_callback(final_result);
+    }
+
+    if (!stop_requested_ &&
+        finished_callback)
+    {
+        finished_callback();
     }
 }
