@@ -1,11 +1,73 @@
-QT       += core gui widgets
+QT += core gui widgets
 
 CONFIG += c++20
 
-QMAKE_CXXFLAGS += -Wall -Werror -Wpedantic -Wextra -Wfloat-conversion -Wfloat-equal
+GRPC_CFLAGS = $$system(pkg-config --cflags grpc++ protobuf)
+GRPC_LIBS = $$system(pkg-config --static --libs grpc++ protobuf)
+
+QMAKE_CXXFLAGS += $$GRPC_CFLAGS
+
+LIBS += $$GRPC_LIBS
+
+QMAKE_CXXFLAGS += \
+    -Wall \
+    -Werror \
+    -Wpedantic \
+    -Wextra \
+    -Wfloat-conversion \
+    -Wfloat-equal
+
+PKG_CONFIG_PATHS = $$system(pkg-config --cflags-only-I grpc++ protobuf)
+PKG_CONFIG_SYSTEM_PATHS = $$replace(PKG_CONFIG_PATHS, -I, -isystem )
+
+QMAKE_CXXFLAGS += $$PKG_CONFIG_SYSTEM_PATHS
+
+defineTest(generateGRPC) {
+    outputDirectory = $$1
+    script = $$2
+    api = $$3
+    !exists($$script) {
+        error("Generation script $$script was not found")
+    }
+    generationResult = $$system("\"$$script\"")
+    base = $$basename(api)
+    base = $$replace(base, \\.proto$,)
+    protoSource = $$outputDirectory/$${base}.pb.cc
+    protoHeader = $$outputDirectory/$${base}.pb.h
+    grpcSource = $$outputDirectory/$${base}.grpc.pb.cc
+    grpcHeader = $$outputDirectory/$${base}.grpc.pb.h
+    !exists($$protoSource) {
+        error("Generated file $$protoSource was not found")
+    }
+    !exists($$protoHeader) {
+        error("Generated file $$protoSource was not found")
+    }
+    !exists($$grpcSource) {
+        error("Generated file $$protoSource was not found")
+    }
+    !exists($$grpcHeader) {
+        error("Generated file $$protoSource was not found")
+    }
+    SOURCES += $$protoSource $$grpcSource
+    HEADERS += $$protoHeader $$grpcHeader
+    INCLUDEPATH += $$outputDirectory
+    DEPENDPATH += $$outputDirectory
+    return (true)
+}
+
+PKU_ROOT_DIR = $$clean_path($$PWD/../../pku)
+PKU_GENERATED_DIR = $$clean_path($$PWD/grpc_pku_service)
+PKU_GENERATE_SCRIPT = $$clean_path($$PKU_ROOT_DIR/src/api/generate.sh)
+PKU_API = $$clean_path($$PKU_ROOT_DIR/src/api/pku_service.proto)
+
+!generateGRPC($$PKU_GENERATED_DIR, $$PKU_GENERATE_SCRIPT, $$PKU_API) {
+    error("Failed to generate Pku gRPC code")
+}
+
+QMAKE_CLEAN += -rf $$PWD/grpc_pku_service
 
 INCLUDEPATH += \
-    graphical_views/ \
+    graphical_views \
     graphical_views/widgets \
     graphical_views/views \
     graphical_views/views/main \
@@ -14,7 +76,7 @@ INCLUDEPATH += \
     errors \
     application \
     application/factory \
-    application/factory/errors
+    application/factory/errors \
 
 SOURCES += \
     application/application.cpp \
@@ -39,6 +101,8 @@ SOURCES += \
     graphical_views/views/main/qt_view_pku.cpp \
     graphical_views/views/main/qt_view_rs_485.cpp \
     graphical_views/widgets/main_window.cpp \
+    grpc_pku_service/pku_service.grpc.pb.cc \
+    grpc_pku_service/pku_service.pb.cc \
     main.cpp
 
 HEADERS += \
@@ -75,22 +139,26 @@ HEADERS += \
     graphical_views/views/main/qt_view_pku.h \
     graphical_views/views/main/qt_view_rs_485.h \
     graphical_views/views/main/view.h \
-    graphical_views/widgets/main_window.h
+    graphical_views/widgets/main_window.h \
+    grpc_pku_service/pku_service.grpc.pb.h \
+    grpc_pku_service/pku_service.pb.h
 
-# Default rules for deployment.
-qnx: target.path = /tmp/$${TARGET}/bin
-else: unix:!android: target.path = /opt/$${TARGET}/bin
-!isEmpty(target.path): INSTALLS += target
+qnx {
+    target.path = /tmp/$${TARGET}/bin
+} else: unix:!android {
+    target.path = /opt/$${TARGET}/bin
+}
+
+!isEmpty(target.path) {
+    INSTALLS += target
+}
 
 DISTFILES += \
-    .clangd
+    .clangd \
+    .clangd \
 
 DESTDIR = $$PWD/build/out
-
 OBJECTS_DIR = $$PWD/build/obj
-
 MOC_DIR = $$PWD/build/moc
-
 UI_DIR = $$PWD/build/ui
-
 RCC_DIR = $$PWD/build/rcc
