@@ -180,7 +180,7 @@ rmdir build log
 
 1. ```tests/run_driver.sh```;
 2. ```tests/run_service.sh```;
-3. ```tests/run.sh```.
+3. ```tests/run_tests.sh```.
 
 ### Windows
 
