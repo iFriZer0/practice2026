@@ -77,7 +77,6 @@ INCLUDEPATH += \
     application \
     application/factory \
     application/factory/errors \
-    grpc_pku_service/
 
 SOURCES += \
     application/application.cpp \
@@ -102,8 +101,6 @@ SOURCES += \
     graphical_views/views/main/qt_view_pku.cpp \
     graphical_views/views/main/qt_view_rs_485.cpp \
     graphical_views/widgets/main_window.cpp \
-    grpc_pku_service/pku_service.grpc.pb.cc \
-    grpc_pku_service/pku_service.pb.cc \
     main.cpp
 
 HEADERS += \
@@ -141,8 +138,6 @@ HEADERS += \
     graphical_views/views/main/qt_view_rs_485.h \
     graphical_views/views/main/view.h \
     graphical_views/widgets/main_window.h \
-    grpc_pku_service/pku_service.grpc.pb.h \
-    grpc_pku_service/pku_service.pb.h
 
 qnx {
     target.path = /tmp/$${TARGET}/bin
