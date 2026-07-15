@@ -15,8 +15,6 @@
 #include <QGroupBox>
 #include <QGridLayout>
 #include <QCheckBox>
-#include <QRegularExpressionValidator>
-#include <QRegularExpression>
 #include <QScrollArea>
 #include <QListWidget>
 #include <QIntValidator>
@@ -64,7 +62,6 @@ private:
     QGroupBox *create_group_box(const QString &title, QWidget *const parent = nullptr) const noexcept;
     QGridLayout *create_grid_layout(QWidget *const parent = nullptr) const noexcept;
     QCheckBox *create_check_box(const QString &text, QWidget *const parent = nullptr) const noexcept;
-    QRegularExpressionValidator *create_regular_expression_validator(const QRegularExpression &re, QObject *const parent = nullptr) const noexcept;
     QScrollArea *create_scroll_area(QWidget *const parent = nullptr) const noexcept;
     QListWidget *create_list_widget(QWidget *const parent = nullptr) const noexcept;
     QIntValidator *create_int_validator(const int minimum, const int maximum, QObject *const parent = nullptr) const noexcept;
