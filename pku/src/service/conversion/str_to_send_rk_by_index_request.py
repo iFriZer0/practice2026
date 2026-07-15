@@ -16,8 +16,7 @@ class StrToSendRkByIndexRequest(converter.Converter[str, pku_driver_pb2.SendRkBy
 
     DELIMITER: str = ";"
 
-    MINIMUM_RK_INDEX: int = 1
-    MAXIMUM_RK_INDEX: int = 48
+    MINIMUM_RK_INDEX: int = 0
 
     MINIMUM_DURATION_MS: int = 0
 
@@ -51,7 +50,7 @@ class StrToSendRkByIndexRequest(converter.Converter[str, pku_driver_pb2.SendRkBy
             raise str_to_send_rk_by_index_request_index_error.StrToSendRkByIndexRequestIndexError(
                 "Incorrect index", str_to_send_rk_by_index_request_index_error.StrToSendRkByIndexRequestIndexError, rk_index
             ) from exception
-        if result < self.MINIMUM_RK_INDEX or result > self.MAXIMUM_RK_INDEX:
+        if result < self.MINIMUM_RK_INDEX:
             self.logger.error(f"Incorrect index \"{rk_index:s}\".")
             raise str_to_send_rk_by_index_request_index_error.StrToSendRkByIndexRequestIndexError(
                 "Incorrect index", str_to_send_rk_by_index_request_index_error.StrToSendRkByIndexRequestIndexError, rk_index

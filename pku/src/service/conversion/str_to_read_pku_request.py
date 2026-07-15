@@ -1,5 +1,6 @@
 import logging
 import typing
+import collections
 import pku_driver_pb2
 from conversion import converter
 from conversion.errors import str_to_read_pku_request_no_parameter_error
@@ -17,7 +18,7 @@ class StrToReadPkuRequest(converter.Converter[str, pku_driver_pb2.ReadPkuRequest
         destination: pku_driver_pb2.ReadPkuRequest = pku_driver_pb2.ReadPkuRequest()
         parameters: typing.List[str] = source.split(self.DELIMITER)
         try:
-            destination.indices.extend([int(parameters[index]) for index in range(len(parameters) - 1)])
+            destination.indices.extend(self.__parse_indices(parameters))
             destination.operation_id = parameters[-1]
         except ValueError as exception:
             self.logger.error("Incorrect index.")
@@ -36,3 +37,12 @@ class StrToReadPkuRequest(converter.Converter[str, pku_driver_pb2.ReadPkuRequest
             )
         )
         return destination
+
+    def __parse_indices(self, parameters: collections.abc.Sequence[str]) -> typing.List[int]:
+        indices: typing.List[int] = [int(parameters[index]) for index in range(len(parameters) - 1)]
+        if any(index < 0 for index in indices):
+            self.logger.error("Negative index")
+            raise str_to_read_pku_request_index_error.StrToReadPkuRequestIndexError(
+                "Negative index", str_to_read_pku_request_index_error.StrToReadPkuRequestIndexError
+            )
+        return indices

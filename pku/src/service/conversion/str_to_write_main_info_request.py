@@ -29,9 +29,7 @@ class StrToWriteMainInfoRequest(converter.Converter[str, pku_driver_pb2.WriteMai
         destination: pku_driver_pb2.WriteMainInfoRequest = pku_driver_pb2.WriteMainInfoRequest()
         parameters: typing.List[str] = source.split(self.DELIMITER)
         try:
-            destination.description = (
-                parameters[self.DESCRIPTION_INDEX] + "\0" * max(0, (self.DESCRIPTION_SIZE - len(parameters[self.DESCRIPTION_INDEX])))
-            )
+            destination.description = parameters[self.DESCRIPTION_INDEX]
             destination.mac = parameters[self.MAC_INDEX]
             destination.ip = parameters[self.IP_INDEX]
             destination.netmask = parameters[self.NETMASK_INDEX]
