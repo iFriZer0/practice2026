@@ -18,8 +18,8 @@
 #include <QRegularExpressionValidator>
 #include <QRegularExpression>
 #include <QScrollArea>
+#include <QListWidget>
 #include <memory>
-#include <string>
 #include "view.h"
 namespace grpc {
 class ChannelInterface;
@@ -55,6 +55,7 @@ private:
     QCheckBox *create_check_box(const QString &text, QWidget *const parent = nullptr) const noexcept;
     QRegularExpressionValidator *create_regular_expression_validator(const QRegularExpression &re, QObject *const parent = nullptr) const noexcept;
     QScrollArea *create_scroll_area(QWidget *const parent = nullptr) const noexcept;
+    QListWidget *create_list_widget(QWidget *const parent = nullptr) const noexcept;
 
     QString parse_mac(const QString &mac) const noexcept;
     QString parse_address(const QString &address) const noexcept;

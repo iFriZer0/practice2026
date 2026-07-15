@@ -21,6 +21,11 @@
 #include <QRegularExpression>
 #include <QLatin1Char>
 #include <QByteArray>
+#include <QListWidget>
+#include <QAbstractItemView>
+#include <QList>
+#include <QListWidgetItem>
+#include <QStringList>
 #include <grpcpp/grpcpp.h>
 #include <sstream>
 #include <string>
@@ -90,6 +95,18 @@ QScrollArea *QtViewPKU::create_scroll_area(QWidget *const parent) const noexcept
         std::cerr << "Не удалось создать QScrollArea" << std::endl;
     }
     return scroll_area;
+}
+
+QListWidget *QtViewPKU::create_list_widget(QWidget *const parent) const noexcept
+{
+    QListWidget *list_widget{nullptr};
+    try {
+        list_widget = new QListWidget{parent};
+    }
+    catch (const std::bad_alloc &) {
+        std::cerr << "Не удалось создать QListWidget" << std::endl;
+    }
+    return list_widget;
 }
 
 QString QtViewPKU::parse_mac(const QString &mac) const noexcept
@@ -323,12 +340,16 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget) noexcept
     main_layout->addWidget(create_label("<b>Чтение длительностей ПКУ</b>"));
 
     QHBoxLayout *read_pku_layout = create_h_box_layout();
-    QLabel *lbl_multi_pku = create_label("Выбор номеров ПКУ:");
+    QLabel *lbl_multi_pku = create_label("Выбор номеров ПКУ (Cntrl+Shift)");
     read_pku_layout->addWidget(lbl_multi_pku);
 
-    QComboBox *multi_pku_select = create_multi_select_combo_box(central_widget, 64);
-    multi_pku_select->setFixedWidth(250);
-    read_pku_layout->addWidget(multi_pku_select);
+    QListWidget *pku_list_widget{create_list_widget(central_widget)};
+    pku_list_widget->setSelectionMode(QAbstractItemView::MultiSelection);
+    for (int i{1}; i < 64; ++i) {
+        pku_list_widget->addItem(QString::number(i));
+    }
+    pku_list_widget->setFixedWidth(250);
+    read_pku_layout->addWidget(pku_list_widget);
 
     QPushButton *btn_read_pku = create_button("Читать длительности ПКУ", central_widget);
     btn_read_pku->setFixedWidth(220);
@@ -461,8 +482,16 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget) noexcept
         }
     });
 
-    QObject::connect(btn_read_pku, &QPushButton::clicked, [multi_pku_select, lbl_read_pku_status, pku_log, this]() {
-        QString param = multi_pku_select->currentText();
+    QObject::connect(btn_read_pku, &QPushButton::clicked, [pku_list_widget, lbl_read_pku_status, pku_log, this]() {
+        QList<QListWidgetItem *>selected{pku_list_widget->selectedItems()};
+        if (selected.isEmpty()) {
+            lbl_read_pku_status->setText("Не выбраны ПКУ");
+        }
+        QStringList indices;
+        for (QListWidgetItem *item : selected) {
+            indices << item->text();
+        }
+        QString param{indices.join(";")};
         lbl_read_pku_status->setText("Чтение...");
 
         api::CommandRequest request;
@@ -485,12 +514,8 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget) noexcept
                 QStringList parts = QString::fromStdString(response.result_text()).split(';');
                 lbl_read_pku_status->setText("Успешно прочитано");
                 pku_log->append("--- Длительности ПКУ ---");
-                std::size_t index{1};
-                for (const QString& part : parts) {
-                    std::ostringstream stream;
-                    stream << "ПКУ " << index << ": " << part.toStdString() << "мс";
-                    pku_log->append(QString::fromStdString(stream.str()));
-                    ++index;
+                for (int i{0}; i < parts.size() && i < indices.size(); ++i) {
+                    pku_log->append(QString{"ПКУ %1: %2"}.arg(indices[i], parts[i]));
                 }
             }
         } else {
