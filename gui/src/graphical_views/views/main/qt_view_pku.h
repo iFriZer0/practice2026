@@ -22,16 +22,25 @@
 #include <QIntValidator>
 #include <QObject>
 #include <memory>
+#include <typeinfo>
+#include "error.h"
 #include "view.h"
 namespace grpc {
 class ChannelInterface;
 }
 
+class ConnectionError : public Error {
+public:
+    ConnectionError(const char *message, const std::type_info &first_error) noexcept;
+
+    const void *get_data() const noexcept override;
+};
+
 
 class QtViewPKU : public View
 {
 public:
-    explicit QtViewPKU(QStackedWidget *const stacked_widget) noexcept;
+    explicit QtViewPKU(QStackedWidget *const stacked_widget);
     QtViewPKU(const QtViewPKU &other) = delete;
     QtViewPKU(QtViewPKU &&other) = delete;
 

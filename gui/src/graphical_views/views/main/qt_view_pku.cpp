@@ -2,8 +2,13 @@
 #include <QTextEdit>
 #include <algorithm>
 #include <cctype>
+#include <chrono>
+#include <grpc/grpc.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/support/status.h>
 #include <iostream>
 #include <fstream>
+#include <memory>
 #include <new>
 #include <QStackedWidget>
 #include <QWidget>
@@ -29,6 +34,7 @@
 #include <climits>
 #include <grpcpp/grpcpp.h>
 #include <string>
+#include "error.h"
 #include "pku_service.pb.h"
 #include "pku_service.grpc.pb.h"
 
@@ -36,6 +42,14 @@
 #include "qt_view_pku.h"
 
 using namespace api;
+
+ConnectionError::ConnectionError(const char *message, const std::type_info &first_error) noexcept
+    : Error(message, first_error) {}
+
+const void *ConnectionError::get_data() const noexcept
+{
+    return nullptr;
+}
 
 QGroupBox *QtViewPKU::create_group_box(const QString &title, QWidget *const parent) const noexcept
 {
@@ -171,7 +185,7 @@ std::string read_pku_service_address() {
     return ip + ":" + port;
 }
 
-QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget) noexcept
+QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget)
     : central_widget{create_widget()}, stacked_widget{stacked_widget}
 {
     QScrollArea *scroll_area{create_scroll_area()};
@@ -180,6 +194,18 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget) noexcept
 
     std::string target_address = read_pku_service_address();
     channel_ = grpc::CreateChannel(target_address, grpc::InsecureChannelCredentials());
+
+    api::CommandRequest request;
+    request.set_command_id(1);
+    api::CommandResponse response;
+    grpc::ClientContext context;
+    std::unique_ptr<MainService::Stub> stub{api::MainService::NewStub(channel_)};
+    std::chrono::system_clock::time_point deadline{std::chrono::system_clock::now() + std::chrono::seconds(2)};
+    context.set_deadline(deadline);
+    grpc::Status status{stub->SendCommand(&context, request, &response)};
+    if (!status.ok()) {
+        throw ConnectionError{"Connection was not established", typeid(ConnectionError)};
+    }
 
     QWidget *content_widget{create_widget()};
     QVBoxLayout *main_layout{create_v_box_layout(content_widget)};
