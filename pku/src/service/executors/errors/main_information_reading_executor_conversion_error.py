@@ -1,0 +1,5 @@
+from executors.errors import main_information_reading_executor_error
+
+
+class MainInformationReadingExecutorConversionError(main_information_reading_executor_error.MainInformationReadingExecutorError):
+    pass

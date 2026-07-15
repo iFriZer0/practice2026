@@ -1,0 +1,24 @@
+@startuml c_1
+
+!include <C4/C4_Context>
+
+!theme plain
+
+UpdateElementStyle(Person, $borderColor="#000000", $fontColor="#000000", $bgColor="#ffffff")
+UpdateElementStyle(System, $borderColor="#000000", $fontColor="#000000", $bgColor="#ffffff")
+
+Person(user, "Пользователь", "Взаимодействует с платами")
+
+System(workplace, "Система взаимодействия с платами", "Позволяет обращаться к плате с разных драйверов")
+
+System(rs485_board, "Плата RS-485", "Отвечает на запросы в формате RS-485")
+System(mko_board, "Плата МКО", "Отвечает на запросы в формате МКО")
+System(pku_board, "Плата РК/ПКУ", "Отвечает на запросы в формате РК/ПКУ")
+
+Rel(user, workplace, "Взаимодействует с платой")
+
+Rel(workplace, rs485_board, "Отправляет запросы")
+Rel(workplace, mko_board, "Отправляет запросы")
+Rel(workplace, pku_board, "Отправляет запросы")
+
+@enduml
