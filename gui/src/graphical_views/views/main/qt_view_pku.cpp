@@ -25,6 +25,8 @@
 #include <QList>
 #include <QListWidgetItem>
 #include <QStringList>
+#include <QObject>
+#include <climits>
 #include <grpcpp/grpcpp.h>
 #include <string>
 #include "pku_service.pb.h"
@@ -105,6 +107,18 @@ QListWidget *QtViewPKU::create_list_widget(QWidget *const parent) const noexcept
         std::cerr << "Не удалось создать QListWidget" << std::endl;
     }
     return list_widget;
+}
+
+QIntValidator *QtViewPKU::create_int_validator(const int minimum, const int maximum, QObject *const parent) const noexcept
+{
+    QIntValidator *int_validator{nullptr};
+    try {
+        int_validator = new QIntValidator{minimum, maximum, parent};
+    }
+    catch (const std::bad_alloc &) {
+        std::cerr << "Не удалось QIntValidator" << std::endl;
+    }
+    return int_validator;
 }
 
 QString QtViewPKU::parse_mac(const QString &mac) const noexcept
@@ -282,8 +296,14 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget) noexcept
 
     QLabel *rk_num_label = create_label("Номер РК");
     QLineEdit *rk_num_input = create_line_edit(central_widget);
+    rk_num_input->setValidator(create_regular_expression_validator(QRegularExpression("^([1-9]|[1-3][0-9]|4[0-8])$"), stacked_widget));
+    rk_num_input->setPlaceholderText("1, 2, ..., 48");
+    rk_num_input->setMinimumWidth(100);
+
     QLabel *rk_time_label = create_label("Длительность (мс)");
     QLineEdit *rk_time_input = create_line_edit(central_widget);
+    rk_time_input->setValidator(create_int_validator(1, INT_MAX, stacked_widget));
+
     QPushButton *btn_send_rk = create_button("Выдать РК", central_widget);
 
     QLabel *chan_label = create_label("Выбор ПКУ");
@@ -546,24 +566,36 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget) noexcept
     });
 
     QObject::connect(btn_send_rk, &QPushButton::clicked, [rk_num_input, lbl_send_rk_status, rk_time_input, this]() {
-        QString param = rk_num_input->text() + ";" + rk_time_input->text();
-        lbl_send_rk_status->setText("Отправка...");
-
-        ::api::CommandRequest request;
-        request.set_command_id(7);
-        request.set_command_param(param.toStdString());
-
-        ::api::CommandResponse response;
-        grpc::ClientContext context;
-
-
-        auto stub = ::api::MainService::NewStub(channel_);
-        grpc::Status status = stub->SendCommand(&context, request, &response);
-
-        if (status.ok()) {
-            lbl_send_rk_status->setText("Выполнено: " + QString::fromStdString(response.result_text()));
+        bool ok_num, ok_time;
+        rk_num_input->text().toInt(&ok_num);
+        if (!ok_num) {
+            lbl_send_rk_status->setText("Заполните номер РК");
         } else {
-            lbl_send_rk_status->setText("Ошибка сети");
+            rk_time_input->text().toInt(&ok_time);
+            if (!ok_time) {
+                lbl_send_rk_status->setText("Заполните длительность");
+            } else {
+                QString param = rk_num_input->text() + ";" + rk_time_input->text() + ";" + "op_id";
+                lbl_send_rk_status->setText("Отправка...");
+
+                ::api::CommandRequest request;
+                request.set_command_id(7);
+                request.set_command_param(param.toStdString());
+
+                ::api::CommandResponse response;
+                grpc::ClientContext context;
+
+
+                auto stub = ::api::MainService::NewStub(channel_);
+                grpc::Status status = stub->SendCommand(&context, request, &response);
+
+                if (status.ok()) {
+                    std::string result{response.success() ? "РК отправлена" : "Ошибка \"" + response.result_text() + "\""};
+                    lbl_send_rk_status->setText(QString::fromStdString(result));
+                } else {
+                    lbl_send_rk_status->setText("Ошибка сети");
+                }
+            }
         }
     });
 

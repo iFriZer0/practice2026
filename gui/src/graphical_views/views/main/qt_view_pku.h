@@ -19,6 +19,8 @@
 #include <QRegularExpression>
 #include <QScrollArea>
 #include <QListWidget>
+#include <QIntValidator>
+#include <QObject>
 #include <memory>
 #include "view.h"
 namespace grpc {
@@ -56,6 +58,7 @@ private:
     QRegularExpressionValidator *create_regular_expression_validator(const QRegularExpression &re, QObject *const parent = nullptr) const noexcept;
     QScrollArea *create_scroll_area(QWidget *const parent = nullptr) const noexcept;
     QListWidget *create_list_widget(QWidget *const parent = nullptr) const noexcept;
+    QIntValidator *create_int_validator(const int minimum, const int maximum, QObject *const parent = nullptr) const noexcept;
 
     QString parse_mac(const QString &mac) const noexcept;
     QString parse_address(const QString &address) const noexcept;
