@@ -85,6 +85,48 @@ serviceCodeFromGrpcError(
     return ServiceError::DRIVER_ERROR;
 }
 
+rs485::service::v1::ErrorCode
+serviceCodeFromReceiveError(
+    const std::string &message)
+{
+    using ServiceError =
+        rs485::service::v1::ErrorCode;
+
+    if (message.find("gRPC error 14") !=
+            std::string::npos ||
+        message.find("Socket closed") !=
+            std::string::npos ||
+        message.find("Connection refused") !=
+            std::string::npos)
+    {
+        return ServiceError::DRIVER_NOT_CONNECTED;
+    }
+
+    if (message.find("No reply") !=
+        std::string::npos)
+    {
+        return ServiceError::DRIVER_NO_REPLY;
+    }
+
+    if (message.find("timed out") !=
+            std::string::npos ||
+        message.find("timeout") !=
+            std::string::npos ||
+        message.find("deadline") !=
+            std::string::npos)
+    {
+        return ServiceError::DRIVER_TIMEOUT;
+    }
+
+    if (message.find("gRPC error 13") !=
+        std::string::npos)
+    {
+        return ServiceError::INTERNAL_ERROR;
+    }
+
+    return ServiceError::DRIVER_ERROR;
+}
+
 } // namespace
 
 Rs485ServiceImpl::Rs485ServiceImpl(
@@ -414,7 +456,9 @@ grpc::Status Rs485ServiceImpl::Subscribe(
             else
             {
                 response.set_error_code(
-                    rs485::service::v1::DRIVER_ERROR
+                    serviceCodeFromReceiveError(
+                        result.error_message
+                    )
                 );
 
                 response.set_error_message(
@@ -426,6 +470,7 @@ grpc::Status Rs485ServiceImpl::Subscribe(
             {
                 break;
             }
+
             if (response.error_code() ==
                 rs485::service::v1::DRIVER_NOT_CONNECTED)
             {
