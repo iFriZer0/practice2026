@@ -1,11 +1,12 @@
 #!/bin/bash
 
 readonly DIRECTORY_PKU_DRIVER_API="."
-readonly DIRECTORY_PKU_SERVICE_API="../../../api"
+readonly DIRECTORY_PKU_SERVICE_API="."
 
 readonly DIRECTORY_PKU_DRIVER="../driver/grpc_pku_driver_cpp"
 readonly DIRECTORY_PKU_SERVICE="../service"
 readonly DIRECTORY_PKU_TESTS="../tests"
+readonly DIRECTORY_GUI="../../../gui/src/grpc_pku_service"
 
 readonly API_PKU_SERVICE="pku_service.proto"
 readonly API_PKU_DRIVER="pku_driver.proto"
@@ -25,3 +26,4 @@ generate_grpc_cpp "$DIRECTORY_PKU_DRIVER" "$API_PKU_DRIVER"
 generate_grpc_python "$DIRECTORY_PKU_DRIVER_API" "$DIRECTORY_PKU_SERVICE" "$API_PKU_DRIVER"
 generate_grpc_python "$DIRECTORY_PKU_SERVICE_API" "$DIRECTORY_PKU_SERVICE" "$API_PKU_SERVICE"
 generate_grpc_python "$DIRECTORY_PKU_SERVICE_API" "$DIRECTORY_PKU_TESTS" "$API_PKU_SERVICE"
+generate_grpc_cpp "$DIRECTORY_GUI" "$API_PKU_SERVICE"
