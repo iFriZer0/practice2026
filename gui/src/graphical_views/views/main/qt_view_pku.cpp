@@ -2,7 +2,6 @@
 #include <QTextEdit>
 #include <algorithm>
 #include <cctype>
-#include <cstddef>
 #include <iostream>
 #include <fstream>
 #include <new>
@@ -27,7 +26,6 @@
 #include <QListWidgetItem>
 #include <QStringList>
 #include <grpcpp/grpcpp.h>
-#include <sstream>
 #include <string>
 #include "pku_service.pb.h"
 #include "pku_service.grpc.pb.h"
@@ -340,7 +338,7 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget) noexcept
     main_layout->addWidget(create_label("<b>Чтение длительностей ПКУ</b>"));
 
     QHBoxLayout *read_pku_layout = create_h_box_layout();
-    QLabel *lbl_multi_pku = create_label("Выбор номеров ПКУ (Cntrl+Shift)");
+    QLabel *lbl_multi_pku = create_label("Выбор номеров ПКУ");
     read_pku_layout->addWidget(lbl_multi_pku);
 
     QListWidget *pku_list_widget{create_list_widget(central_widget)};
@@ -524,7 +522,7 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget) noexcept
     });
 
     QObject::connect(btn_set_mode, &QPushButton::clicked, [chan_select, mode_select, lbl_set_mode_status, this]() {
-        QString param = chan_select->currentText() + ";" + QString::number(mode_select->currentIndex());
+        QString param = QString::number(chan_select->currentIndex() + 1) + ";" + QString::number(mode_select->currentIndex()) + ";" + "op_id";
         lbl_set_mode_status->setText("Применение...");
 
         api::CommandRequest request;
@@ -540,9 +538,10 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget) noexcept
         grpc::Status status = stub->SendCommand(&context, request, &response);
 
         if (status.ok()) {
-            lbl_set_mode_status->setText("Режим изменен: " + QString::fromStdString(response.result_text()));
+            std::string result{response.success() ? "Режим изменён" : "Ошибка \"" + response.result_text() + "\""};
+            lbl_set_mode_status->setText(QString::fromStdString(result));
         } else {
-            lbl_set_mode_status->setText("Ошибка");
+            lbl_set_mode_status->setText("Ошибка сети");
         }
     });
 

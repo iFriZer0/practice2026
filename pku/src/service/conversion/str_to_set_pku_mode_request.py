@@ -46,12 +46,12 @@ class StrToSetPkuModeRequest(converter.Converter[str, pku_driver_pb2.SetPkuModeR
         try:
             result = int(pku_index)
         except ValueError as exception:
-            self.logger.error("Incorrect index \"{pku_index:s}\".")
+            self.logger.error(f"Incorrect index \"{pku_index:s}\".")
             raise str_to_set_pku_mode_request_index_error.StrToSetPkuModeRequestIndexError(
                 "Incorrect index", str_to_set_pku_mode_request_index_error.StrToSetPkuModeRequestIndexError, pku_index
             ) from exception
         if result < self.MINIMUM_PKU_INDEX or result > self.MAXIMUM_PKU_INDEX:
-            self.logger.error("Incorrect index \"{pku_index:s}\".")
+            self.logger.error(f"Incorrect index \"{pku_index:s}\".")
             raise str_to_set_pku_mode_request_index_error.StrToSetPkuModeRequestIndexError(
                 "Incorrect index", str_to_set_pku_mode_request_index_error.StrToSetPkuModeRequestIndexError, pku_index
             )
@@ -62,12 +62,12 @@ class StrToSetPkuModeRequest(converter.Converter[str, pku_driver_pb2.SetPkuModeR
         try:
             result = int(mode)
         except ValueError as exception:
-            self.logger.error("Incorrect mode \"{mode:s}\".")
+            self.logger.error(f"Incorrect mode \"{mode:s}\".")
             raise str_to_set_pku_mode_request_mode_error.StrToSetPkuModeRequestModeError(
                 "Incorrect mode", str_to_set_pku_mode_request_mode_error.StrToSetPkuModeRequestModeError, mode
             ) from exception
         if result < self.MINIMUM_MODE or result > self.MAXIMUM_MODE:
-            self.logger.error("Incorrect mode \"{mode:s}\".")
+            self.logger.error(f"Incorrect mode \"{mode:s}\".")
             raise str_to_set_pku_mode_request_mode_error.StrToSetPkuModeRequestModeError(
                 "Incorrect mode", str_to_set_pku_mode_request_mode_error.StrToSetPkuModeRequestModeError, mode
             )
