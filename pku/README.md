@@ -26,11 +26,109 @@
 
 Директория ```service``` содержит основной код микросервиса.
 
+## Зависимости
+
+### Linux
+
+Для работы микросервиса достаточно установить следующие зависимости:
+
+1. Python;
+2. pip;
+3. gRPC для Python.
+
+Для сборки заглушки драйвера достаточно установить следующие зависимости:
+
+1. CMake;
+2. Make;
+3. g++;
+4. gRPC для C++.
+
+#### Python
+
+Инструменты разработки на Python можно установить с помощью пакетного менеджера.
+
+```bash
+sudo apt-get install python3
+```
+
+#### pip
+
+Пакетный менеджер pip для Python можно установить с помощью пакетного менеджера.
+
+```bash
+sudo apt-get install python3-pip
+```
+
+#### gRPC для Python
+
+Набор модулей gRPC можно установить с помощью пакетного менеджера Python.
+
+```bash
+python3 -m pip install grpcio
+```
+
+Генератор gRPC-кода protoc можно установить с помощью пакетного менеджера Python.
+
+```bash
+python3 -m pip install grpcio-tools
+```
+
+#### CMake
+
+Систему сборки CMake можно установить с помощью пакетного менеджера.
+
+```bash
+sudo apt-get install cmake
+```
+
+#### Make
+
+Систему сборки Make можно установить с помощью пакетного менеджера.
+
+```bash
+sudo apt-get install make
+```
+
+#### g++
+
+Компилятор g++ можно установить с помощью пакетного менеджера.
+
+```bash
+sudo apt-get install g++
+```
+
+#### gRPC для C++
+
+Библиотеки gRPC собираются из исходного кода.
+Для этого нужно клонировать официальный репозиторий.
+
+```bash
+git clone --recurse-submodules -b v1.82.0 --depth 1 --shallow-submodules https://github.com/grpc/grpc
+```
+
+В переменную окружения ```MY_INSTALL_DIR``` нужно поместить директорию, в которую будут устанавливаться библиотеки gRPC.
+
+Для сборки выполняются следующие команды.
+
+```bash
+cd grpc
+mkdir -p cmake/build
+pushd cmake/build
+cmake -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF -DCMAKE_CXX_STANDARD=17 -DCMAKE_INSTALL_PREFIX=$MY_INSTALL_DIR ../..
+make -j 4
+make install
+popd
+```
+
+В переменную окружения ```PATH``` нужно поместить директорию ```$MY_INSTALL_DIR/bin``` с бинарными файлами gRPC.
+
+В переменную окружения ```PKG_CONFIG_PATH``` нужно поместить директорию ```MY_INSTALL_DIR/lib/pkgconfig``` с конфигурационными файлами библиотек.
+
 ## Сборка
 
 ### Linux
 
-Генерация кода gRPC выполняется с помощью скрипт ```api/generate.sh```.
+Генерация кода gRPC выполняется с помощью скрипта ```api/generate.sh```.
 
 Cборка без генерации кода gRPC выполняется с помощью скрипта ```build.sh```.
 
