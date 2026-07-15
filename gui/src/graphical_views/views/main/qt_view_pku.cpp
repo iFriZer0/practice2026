@@ -21,8 +21,6 @@
 #include <QCheckBox>
 #include <QGroupBox>
 #include <QGridLayout>
-#include <QRegularExpressionValidator>
-#include <QRegularExpression>
 #include <QLatin1Char>
 #include <QByteArray>
 #include <QListWidget>
@@ -85,18 +83,6 @@ QCheckBox *QtViewPKU::create_check_box(const QString &text, QWidget *const paren
         std::cerr << "Не удалось создать QCheckBox" << std::endl;
     }
     return check_box;
-}
-
-QRegularExpressionValidator *QtViewPKU::create_regular_expression_validator(const QRegularExpression &re, QObject *const parent) const noexcept
-{
-    QRegularExpressionValidator *regular_expression_validator{nullptr};
-    try {
-        regular_expression_validator = new QRegularExpressionValidator{re, parent};
-    }
-    catch (const std::bad_alloc &) {
-        std::cerr << "Не удалось создать QRegularExpressionValidator" << std::endl;
-    }
-    return regular_expression_validator;
 }
 
 QScrollArea *QtViewPKU::create_scroll_area(QWidget *const parent) const noexcept
@@ -269,7 +255,6 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget)
     grid_layout->addWidget(create_label("MAC-адрес"), 1, 0);
     QLineEdit *le_mac{create_line_edit(central_widget)};
     le_mac->setPlaceholderText("AA:BB:CC:DD:EE:FF");
-    le_mac->setValidator(create_regular_expression_validator(QRegularExpression{"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$"}, stacked_widget));
     grid_layout->addWidget(le_mac, 1, 1);
 
     QRegularExpression ip_regex{"^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"};
@@ -277,25 +262,21 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget)
     grid_layout->addWidget(create_label("IP-адрес"), 2, 0);
     QLineEdit *le_ip{create_line_edit(central_widget)};
     le_ip->setPlaceholderText("192.168.1.1");
-    le_ip->setValidator(create_regular_expression_validator(ip_regex, stacked_widget));
     grid_layout->addWidget(le_ip, 2, 1);
 
     grid_layout->addWidget(create_label("Сетевая маска"), 2, 2);
     QLineEdit *le_mask{create_line_edit(central_widget)};
     le_mask->setPlaceholderText("255.255.255.0");
-    le_mask->setValidator(create_regular_expression_validator(ip_regex, stacked_widget));
     grid_layout->addWidget(le_mask, 2, 3);
 
     grid_layout->addWidget(create_label("Основной шлюз"), 3, 0);
     QLineEdit *le_gateway{create_line_edit(central_widget)};
     le_gateway->setPlaceholderText("192.168.1.1");
-    le_gateway->setValidator(create_regular_expression_validator(ip_regex, stacked_widget));
     grid_layout->addWidget(le_gateway, 3, 1);
 
     grid_layout->addWidget(create_label("DNS"), 3, 2);
     QLineEdit *le_dns{create_line_edit(central_widget)};
     le_dns->setPlaceholderText("8.8.8.8");
-    le_dns->setValidator(create_regular_expression_validator(ip_regex, stacked_widget));
     grid_layout->addWidget(le_dns, 3, 3);
 
     QCheckBox *cb_dhcp{create_check_box("Использовать DHCP", central_widget)};
@@ -322,7 +303,6 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget)
 
     QLabel *rk_num_label = create_label("Номер РК");
     QLineEdit *rk_num_input = create_line_edit(central_widget);
-    rk_num_input->setValidator(create_regular_expression_validator(QRegularExpression("^([1-9]|[1-3][0-9]|4[0-8])$"), stacked_widget));
     rk_num_input->setPlaceholderText("1, 2, ..., 48");
     rk_num_input->setMinimumWidth(100);
 
