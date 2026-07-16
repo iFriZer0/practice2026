@@ -103,17 +103,8 @@ RS485_API = $$clean_path($$RS485_ROOT_DIR/api/rs485_service.proto)
     error("Failed to generate RS-485 gRPC code")
 }
 
-QMAKE_CLEAN += -rf $$PWD/grpc_pku_service
-
-PKU_PROTO_SOURCE = $$PKU_GENERATED_DIR/pku_service.pb.cc
-PKU_PROTO_HEADER = $$PKU_GENERATED_DIR/pku_service.pb.h
-PKU_GRPC_SOURCE = $$PKU_GENERATED_DIR/pku_service.grpc.pb.cc
-PKU_GRPC_HEADER = $$PKU_GENERATED_DIR/pku_service.grpc.pb.h
-
-RS485_PROTO_SOURCE = $$RS485_GENERATED_DIR/rs485_service.pb.cc
-RS485_PROTO_HEADER = $$RS485_GENERATED_DIR/rs485_service.pb.h
-RS485_GRPC_SOURCE = $$RS485_GENERATED_DIR/rs485_service.grpc.pb.cc
-RS485_GRPC_HEADER = $$RS485_GENERATED_DIR/rs485_service.grpc.pb.h
+QMAKE_CLEAN += -rf $$PKU_GENERATED_DIR
+QMAKE_CLEAN += -rf $$RS485_GENERATED_DIR
 
 INCLUDEPATH += \
     $$PWD \
@@ -176,10 +167,6 @@ SOURCES += \
     graphical_views/views/main/qt_view_rs_485.cpp \
     graphical_views/widgets/main_window.cpp \
     $$RS485_CLIENT_DIR/rs485_microservice_client.cpp \
-    $$RS485_PROTO_SOURCE \
-    $$RS485_GRPC_SOURCE \
-    $$PKU_PROTO_SOURCE \
-    $$PKU_GRPC_SOURCE \
     main.cpp
 
 HEADERS += \
@@ -220,21 +207,7 @@ HEADERS += \
     graphical_views/views/main/view.h \
     graphical_views/widgets/main_window.h \
     $$RS485_CLIENT_DIR/rs485_gui_types.h \
-    $$RS485_CLIENT_DIR/rs485_microservice_client.h \
-    $$RS485_PROTO_HEADER \
-    $$RS485_GRPC_HEADER \
-    $$PKU_PROTO_HEADER \
-    $$PKU_GRPC_HEADER
-
-QMAKE_CLEAN += \
-    $$RS485_PROTO_SOURCE \
-    $$RS485_PROTO_HEADER \
-    $$RS485_GRPC_SOURCE \
-    $$RS485_GRPC_HEADER \
-    $$PKU_PROTO_SOURCE \
-    $$PKU_PROTO_HEADER \
-    $$PKU_GRPC_SOURCE \
-    $$PKU_GRPC_HEADER
+    $$RS485_CLIENT_DIR/rs485_microservice_client.h
 
 qnx {
     target.path = /tmp/$${TARGET}/bin
@@ -248,6 +221,8 @@ qnx {
 
 DISTFILES += \
     .clangd \
+    $$MKO_API \
+    $$MKO_GENERATE_SCRIPT \
     $$RS485_API \
     $$RS485_GENERATE_SCRIPT \
     $$PKU_API \
