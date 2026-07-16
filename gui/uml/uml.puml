@@ -1,0 +1,53 @@
+@startuml uml
+
+!theme plain
+
+skinparam ClassAttributeIconSize 0
+
+left to right direction
+
+skinparam linetype ortho
+
+interface View {
+    +show()
+}
+
+class QtMainView {
+    -window: MainWindow
+    +show()
+}
+
+QtMainView --^ View
+QtMainView o--> MainWindow
+
+class MainWindow {
+    -tab_bar: QTabBar
+    -stacked_widget: QStackedWidget
+    -views: View[3]
+    -switch_tab(index: Integer)
+    +show()
+}
+
+MainWindow o--> View
+
+class QtViewRS485 {
+    +show()
+}
+
+QtViewRS485 --^ View
+
+class QtViewMKO {
+    +show()
+}
+
+QtViewMKO --^ View
+
+class QtViewPKU {
+    +show()
+}
+
+QtViewPKU --^ View
+
+hide circle
+
+@enduml

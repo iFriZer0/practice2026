@@ -1,0 +1,143 @@
+syntax = "proto3";
+
+package mko.workstation.v1;
+
+option go_package = "mko/api/gen;mkoapiv1";
+
+// Ошибки НЕ передаются полями в сообщениях. Источник ошибки
+// (невалидные данные / отказ драйвера / таймаут / нет связи / не
+// реализовано) кодируется через стандартный gRPC status.Code:
+//   InvalidArgument     — не прошла ваша валидация
+//   FailedPrecondition  — драйвер/плата отклонили операцию
+//   DeadlineExceeded    — не дождались ответа
+//   Unavailable         — нет связи с mko_driver
+//   Unimplemented       — функциональность драйвером пока не поддержана (TCR!/TCT!)
+// Клиент читает код через status.FromError(err).
+
+service MkoWorkstationService {
+  rpc GetStatus(Empty) returns (StatusResponse);
+  rpc ConfigureOu(ConfigureOuRequest) returns (Empty);
+  rpc SetOuResponseWord(SetOuResponseWordRequest) returns (Empty);
+  rpc ReadOuSubaddress(ReadOuSubaddressRequest) returns (OuSubaddressData);
+  rpc WriteOuSubaddress(WriteOuSubaddressRequest) returns (Empty);
+  rpc SendRawOuData(WriteOuSubaddressRequest) returns (Empty);
+  rpc SubscribeOuCommands(SubscribeOuCommandsRequest) returns (stream OuCommandEvent);
+  rpc ClearReceiveBuffer(ClearBufferRequest) returns (Empty);
+  rpc ClearTransmitBuffer(ClearBufferRequest) returns (Empty);
+
+  // часть для KK
+  rpc ConfigureKK(ConfigureKKRequest) returns (Empty);
+  rpc ConfigureExchange(ConfigureExchangeRequest) returns (Empty);
+  rpc RunExchange(RunExchangeRequest) returns (Empty);
+  rpc SubscribeExchangeResults(SubscribeExchangeResultsRequest) returns (stream ExchangeResult);
+}
+
+message Empty {
+}
+
+message StatusResponse {
+  string service_version = 1;
+  bool driver_connected = 2;
+  string driver_version = 3;
+}
+
+message ConfigureOuRequest {
+  string board_id = 1;
+  int32 index = 2;
+  int32 channel = 3;
+  int32 ou_address = 4;
+  int32 response_word = 5;
+  string remote_ip = 6;
+  int32 remote_port = 7;
+}
+
+message SetOuResponseWordRequest {
+  string board_id = 1;
+  int32 index = 2;
+  int32 channel = 3;
+  int32 ou_address = 4;
+  int32 response_word = 5;
+}
+
+message ReadOuSubaddressRequest {
+  string board_id = 1;
+  uint32 subaddress = 2;
+  bool receive_area = 3;
+}
+
+message OuSubaddressData {
+  uint32 subaddress = 1;
+  repeated uint32 sd = 2;
+  uint32 cmd_word = 3;
+  uint32 result_word = 4;
+  string decoded_result = 5;
+}
+
+message WriteOuSubaddressRequest {
+  string board_id = 1;
+  uint32 subaddress = 2;
+  repeated uint32 sd = 3;
+}
+
+message SubscribeOuCommandsRequest {
+  string board_id = 1;
+}
+
+message OuCommandEvent {
+  uint32 cmd_word = 1;
+  uint32 result_word = 2;
+  bool receive_from_ou = 3;
+  uint32 ou_address = 4;
+  uint32 subaddress = 5;
+  uint32 word_count = 6;
+  string decoded_command = 7;
+  string decoded_result = 8;
+}
+
+message ClearBufferRequest {
+  string board_id = 1;
+  int32 index = 2;
+}
+
+message ConfigureKKRequest {
+  string board_id = 1;
+  int32 index = 2;
+  int32 channel = 3;
+  int32 bus_control = 4;
+  int32 ou_address = 5;
+  int32 ou_resp_word = 6;
+  int32 vector_word = 7;
+  int32 selftest_word = 8;
+  string remote_ip = 9;
+  int32 remote_port = 10;
+  string operation_id = 11;
+}
+
+message ConfigureExchangeRequest {
+  string board_id = 1;
+  int32 format = 2;
+  uint32 ks1 = 3;
+  uint32 ks2 = 4;
+  repeated uint32 sd = 5;
+  string operation_id = 6;
+}
+
+message RunExchangeRequest {
+  string board_id = 1;
+  string operation_id = 2;
+}
+
+message SubscribeExchangeResultsRequest {
+  string board_id = 1;
+}
+
+message ExchangeResult {
+  int32 format = 1;
+  uint32 ks1 = 2;
+  uint32 ks2 = 3;
+  repeated uint32 sd = 4;
+  uint32 answer_word_1 = 5;
+  uint32 answer_word_2 = 6;
+  uint32 result_word = 7;
+  string decoded_result = 8;
+}
