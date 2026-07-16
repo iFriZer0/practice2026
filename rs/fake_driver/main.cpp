@@ -6,12 +6,14 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include "rs485_config.h"
 
 int main(int argc, char* argv[])
 {
     try
     {
-        std::string address = "127.0.0.1:50051";
+        Rs485Config config = Rs485Config::load("config/config.yaml");
+        std::string address = config.driverAddress();
 
         if (argc > 1)
         {

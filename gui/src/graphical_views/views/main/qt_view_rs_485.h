@@ -48,10 +48,6 @@ public:
 
 private:
     static constexpr int NOT_FOUND{-1};
-    static constexpr const char *DEFAULT_RS485_SERVICE_ADDRESS{
-        "127.0.0.1:50052"
-    };
-
     QWidget *central_widget{nullptr};
     QStackedWidget *stacked_widget{nullptr};
 

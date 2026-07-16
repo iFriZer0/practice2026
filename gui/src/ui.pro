@@ -7,7 +7,7 @@ GRPC_LIBS = $$system(pkg-config --static --libs grpc++ protobuf)
 
 QMAKE_CXXFLAGS += $$GRPC_CFLAGS
 
-LIBS += $$GRPC_LIBS
+LIBS += $$GRPC_LIBS -lyaml-cpp
 
 QMAKE_CXXFLAGS += \
     -Wall \
@@ -20,7 +20,7 @@ QMAKE_CXXFLAGS += \
 macx: QMAKE_CXXFLAGS += -Wno-nullability-extension
 
 PKG_CONFIG_PATHS = $$system(pkg-config --cflags-only-I grpc++ protobuf)
-PKG_CONFIG_SYSTEM_PATHS = $$replace(PKG_CONFIG_PATHS, -I, -isystem )
+PKG_CONFIG_SYSTEM_PATHS = $$replace(PKG_CONFIG_PATHS, -I, -isystem)
 
 QMAKE_CXXFLAGS += $$PKG_CONFIG_SYSTEM_PATHS
 
@@ -93,17 +93,26 @@ PKU_API = $$clean_path($$PKU_ROOT_DIR/src/api/pku_service.proto)
     error("Failed to generate Pku gRPC code")
 }
 
+QMAKE_CLEAN += -rf $$PKU_GENERATED_DIR
+
 RS485_ROOT_DIR = $$clean_path($$PWD/../../rs)
 RS485_CLIENT_DIR = $$clean_path($$RS485_ROOT_DIR/client)
+RS485_CONFIG_DIR = $$clean_path($$RS485_ROOT_DIR/config)
+RS485_CONFIG_FILE = $$clean_path($$RS485_CONFIG_DIR/config.yaml)
 RS485_GENERATED_DIR = $$clean_path($$RS485_ROOT_DIR/build/gui_generated)
 RS485_GENERATE_SCRIPT = $$clean_path($$RS485_ROOT_DIR/scripts/generate_gui_proto.sh)
 RS485_API = $$clean_path($$RS485_ROOT_DIR/api/rs485_service.proto)
+
+!exists($$RS485_CONFIG_FILE) {
+    error("RS-485 config file $$RS485_CONFIG_FILE was not found")
+}
+
+DEFINES += RS485_GUI_CONFIG_PATH=\"\\\"$$RS485_CONFIG_FILE\\\"\"
 
 !generateGRPC($$RS485_GENERATED_DIR, $$RS485_GENERATE_SCRIPT, $$RS485_API) {
     error("Failed to generate RS-485 gRPC code")
 }
 
-QMAKE_CLEAN += -rf $$PKU_GENERATED_DIR
 QMAKE_CLEAN += -rf $$RS485_GENERATED_DIR
 
 INCLUDEPATH += \
@@ -122,7 +131,9 @@ INCLUDEPATH += \
     $$MKO_GENERATED_DIR \
     $$RS485_CLIENT_DIR \
     $$RS485_GENERATED_DIR \
-    $$PKU_GENERATED_DIR
+    $$PKU_GENERATED_DIR \
+    $$RS485_CONFIG_DIR \
+    $$RS485_GENERATED_DIR
 
 DEPENDPATH += \
     $$PWD \
@@ -140,7 +151,9 @@ DEPENDPATH += \
     $$MKO_GENERATED_DIR \
     $$RS485_CLIENT_DIR \
     $$RS485_GENERATED_DIR \
-    $$PKU_GENERATED_DIR
+    $$PKU_GENERATED_DIR \
+    $$RS485_CONFIG_DIR \
+    $$RS485_GENERATED_DIR
 
 SOURCES += \
     application/application.cpp \
@@ -167,6 +180,7 @@ SOURCES += \
     graphical_views/views/main/qt_view_rs_485.cpp \
     graphical_views/widgets/main_window.cpp \
     $$RS485_CLIENT_DIR/rs485_microservice_client.cpp \
+    $$RS485_CONFIG_DIR/rs485_config.cpp \
     main.cpp
 
 HEADERS += \
@@ -207,7 +221,8 @@ HEADERS += \
     graphical_views/views/main/view.h \
     graphical_views/widgets/main_window.h \
     $$RS485_CLIENT_DIR/rs485_gui_types.h \
-    $$RS485_CLIENT_DIR/rs485_microservice_client.h
+    $$RS485_CLIENT_DIR/rs485_microservice_client.h \
+    $$RS485_CONFIG_DIR/rs485_config.h
 
 qnx {
     target.path = /tmp/$${TARGET}/bin

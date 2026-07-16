@@ -258,6 +258,7 @@ if(RS485_BUILD_TESTING)
         RS485_FAKE_DRIVER_SOURCES
         "fake_driver/fake_rs485_driver.cpp"
         "fake_driver/main.cpp"
+        "config/rs485_config.cpp"
     )
 
     set(
@@ -305,6 +306,7 @@ if(RS485_BUILD_TESTING)
         rs485_fake_driver
         PRIVATE
             "${CMAKE_CURRENT_SOURCE_DIR}/fake_driver"
+            "${CMAKE_CURRENT_SOURCE_DIR}/config"
     )
 
     target_link_libraries(
@@ -312,6 +314,7 @@ if(RS485_BUILD_TESTING)
         PRIVATE
             rs485_driver_proto
             Threads::Threads
+            yaml-cpp
     )
 
     add_executable(
