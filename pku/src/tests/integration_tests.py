@@ -16,8 +16,6 @@ class IntegrationTests(unittest.TestCase):
         SEND_RK_BY_INDEX = 7
         GET_VERSION = 8
 
-    ADDRESS: str = "localhost:50052"
-
     DELIMITER: str = ";"
 
     DESCRIPTION_SIZE: int = 120
@@ -26,7 +24,12 @@ class IntegrationTests(unittest.TestCase):
     stub: pku_service_pb2_grpc.MainServiceStub
 
     def setUp(self) -> None:
-        self.channel = grpc.insecure_channel(self.ADDRESS)
+        ip: str
+        port: str
+        with open("../configuration/pku_service_address.txt") as file:
+    	    ip = file.readline().rstrip()
+    	    port = file.readline().rstrip()
+        self.channel = grpc.insecure_channel(ip + ":" + port)
         self.stub = pku_service_pb2_grpc.MainServiceStub(self.channel)
 
     def tearDown(self) -> None:
