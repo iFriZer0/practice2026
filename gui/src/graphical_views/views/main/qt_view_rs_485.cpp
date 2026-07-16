@@ -1,5 +1,7 @@
 #include "qt_view_rs_485.h"
 
+#include "rs485_config.h"
+
 #include <exception>
 #include <iostream>
 #include <new>
@@ -323,16 +325,24 @@ void QtViewRS485::set_driver_controls_enabled(
 
 void QtViewRS485::connect_to_microservice()
 {
-    const QString endpoint =
-        QString::fromLatin1(
-            DEFAULT_RS485_SERVICE_ADDRESS
-        );
-
     try
     {
+        const Rs485Config config =
+            Rs485Config::load(
+                RS485_GUI_CONFIG_PATH
+            );
+
+        const std::string service_endpoint =
+            config.serviceAddress();
+
         const bool connected =
             rs485_client_->connect(
-                DEFAULT_RS485_SERVICE_ADDRESS
+                service_endpoint
+            );
+
+        const QString endpoint =
+            QString::fromStdString(
+                service_endpoint
             );
 
         if (connected)
