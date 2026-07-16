@@ -115,6 +115,11 @@ DEFINES += RS485_GUI_CONFIG_PATH=\"\\\"$$RS485_CONFIG_FILE\\\"\"
 
 QMAKE_CLEAN += -rf $$RS485_GENERATED_DIR
 
+BUILD_DIR = $$clean_path($$PWD/build)
+GENERATED_DIR = $$clean_path($$PWD/generated)
+
+QMAKE_CLEAN += -rf $$BUILD_DIR $$GENERATED_DIR
+
 INCLUDEPATH += \
     $$PWD \
     $$PWD/graphical_views \
