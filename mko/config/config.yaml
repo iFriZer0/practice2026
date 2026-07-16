@@ -1,0 +1,23 @@
+service:
+  host: 127.0.0.1
+  port: 50051
+
+driver:
+  host: 127.0.0.1
+  port: 50052
+
+fake_driver:
+  port: 50052
+
+timeouts:
+  # Таймаут одиночных gRPC-вызовов к mko-driver.
+  # Должен быть больше внутреннего таймаута драйвера (~1500ms),
+  # иначе сервис отвалится раньше, чем драйвер дождётся платы.
+  driver_unary: 2s
+  # Таймаут команд КК (ConfigureKK, ConfigureExchange, RunExchange).
+  kk_command: 1500ms
+
+log:
+  level: info      # debug | info | warn | error
+  format: console  # console | json
+  env: local       # local | production
