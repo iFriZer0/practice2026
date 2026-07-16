@@ -6,8 +6,8 @@ GRPC_CFLAGS = $$system(pkg-config --cflags grpc++ protobuf)
 GRPC_LIBS = $$system(pkg-config --static --libs grpc++ protobuf)
 
 QMAKE_CXXFLAGS += $$GRPC_CFLAGS
-LIBS += $$GRPC_LIBS
-LIBS += -lyaml-cpp
+
+LIBS += $$GRPC_LIBS -lyaml-cpp
 
 QMAKE_CXXFLAGS += \
     -Wall \
@@ -16,6 +16,8 @@ QMAKE_CXXFLAGS += \
     -Wextra \
     -Wfloat-conversion \
     -Wfloat-equal
+
+macx: QMAKE_CXXFLAGS += -Wno-nullability-extension
 
 PKG_CONFIG_PATHS = $$system(pkg-config --cflags-only-I grpc++ protobuf)
 PKG_CONFIG_SYSTEM_PATHS = $$replace(PKG_CONFIG_PATHS, -I, -isystem)
@@ -48,21 +50,50 @@ defineTest(generateGRPC) {
     !exists($$protoSource) {
         error("Generated file $$protoSource was not found")
     }
-
     !exists($$protoHeader) {
         error("Generated file $$protoHeader was not found")
     }
-
     !exists($$grpcSource) {
         error("Generated file $$grpcSource was not found")
     }
-
     !exists($$grpcHeader) {
         error("Generated file $$grpcHeader was not found")
     }
 
+    SOURCES += $$protoSource $$grpcSource
+    HEADERS += $$protoHeader $$grpcHeader
+    INCLUDEPATH += $$outputDirectory
+    DEPENDPATH += $$outputDirectory
+
+    export(SOURCES)
+    export(HEADERS)
+    export(INCLUDEPATH)
+    export(DEPENDPATH)
+
     return(true)
 }
+
+MKO_ROOT_DIR = $$clean_path($$PWD/../../mko)
+MKO_GENERATED_DIR = $$clean_path($$PWD/generated/mko)
+MKO_GENERATE_SCRIPT = $$clean_path($$MKO_ROOT_DIR/api/generate-gui-cpp.sh)
+MKO_API = $$clean_path($$MKO_ROOT_DIR/api/mko.proto)
+
+!generateGRPC($$MKO_GENERATED_DIR, $$MKO_GENERATE_SCRIPT, $$MKO_API) {
+    error("Failed to generate MKO gRPC code")
+}
+
+QMAKE_CLEAN += -rf $$MKO_GENERATED_DIR
+
+PKU_ROOT_DIR = $$clean_path($$PWD/../../pku)
+PKU_GENERATED_DIR = $$clean_path($$PWD/grpc_pku_service)
+PKU_GENERATE_SCRIPT = $$clean_path($$PKU_ROOT_DIR/src/api/generate.sh)
+PKU_API = $$clean_path($$PKU_ROOT_DIR/src/api/pku_service.proto)
+
+!generateGRPC($$PKU_GENERATED_DIR, $$PKU_GENERATE_SCRIPT, $$PKU_API) {
+    error("Failed to generate Pku gRPC code")
+}
+
+QMAKE_CLEAN += -rf $$PKU_GENERATED_DIR
 
 RS485_ROOT_DIR = $$clean_path($$PWD/../../rs)
 RS485_CLIENT_DIR = $$clean_path($$RS485_ROOT_DIR/client)
@@ -76,16 +107,13 @@ RS485_API = $$clean_path($$RS485_ROOT_DIR/api/rs485_service.proto)
     error("RS-485 config file $$RS485_CONFIG_FILE was not found")
 }
 
-DEFINES += RS485_GUI_CONFIG_PATH=\\\"$$RS485_CONFIG_FILE\\\"
+DEFINES += RS485_GUI_CONFIG_PATH=\"\\\"$$RS485_CONFIG_FILE\\\"\"
 
 !generateGRPC($$RS485_GENERATED_DIR, $$RS485_GENERATE_SCRIPT, $$RS485_API) {
     error("Failed to generate RS-485 gRPC code")
 }
 
-RS485_PROTO_SOURCE = $$RS485_GENERATED_DIR/rs485_service.pb.cc
-RS485_PROTO_HEADER = $$RS485_GENERATED_DIR/rs485_service.pb.h
-RS485_GRPC_SOURCE = $$RS485_GENERATED_DIR/rs485_service.grpc.pb.cc
-RS485_GRPC_HEADER = $$RS485_GENERATED_DIR/rs485_service.grpc.pb.h
+QMAKE_CLEAN += -rf $$RS485_GENERATED_DIR
 
 INCLUDEPATH += \
     $$PWD \
@@ -99,7 +127,11 @@ INCLUDEPATH += \
     $$PWD/application \
     $$PWD/application/factory \
     $$PWD/application/factory/errors \
+    $$PWD/clients/mko \
+    $$MKO_GENERATED_DIR \
     $$RS485_CLIENT_DIR \
+    $$RS485_GENERATED_DIR \
+    $$PKU_GENERATED_DIR \
     $$RS485_CONFIG_DIR \
     $$RS485_GENERATED_DIR
 
@@ -115,7 +147,11 @@ DEPENDPATH += \
     $$PWD/application \
     $$PWD/application/factory \
     $$PWD/application/factory/errors \
+    $$PWD/clients/mko \
+    $$MKO_GENERATED_DIR \
     $$RS485_CLIENT_DIR \
+    $$RS485_GENERATED_DIR \
+    $$PKU_GENERATED_DIR \
     $$RS485_CONFIG_DIR \
     $$RS485_GENERATED_DIR
 
@@ -128,6 +164,7 @@ SOURCES += \
     application/factory/errors/view_director_error.cpp \
     application/factory/qt_main_view_builder.cpp \
     application/factory/view_director.cpp \
+    clients/mko/grpc_mko_client.cpp \
     errors/error.cpp \
     factory/errors/creator_error.cpp \
     factory/errors/creator_maker_error.cpp \
@@ -144,8 +181,6 @@ SOURCES += \
     graphical_views/widgets/main_window.cpp \
     $$RS485_CLIENT_DIR/rs485_microservice_client.cpp \
     $$RS485_CONFIG_DIR/rs485_config.cpp \
-    $$RS485_PROTO_SOURCE \
-    $$RS485_GRPC_SOURCE \
     main.cpp
 
 HEADERS += \
@@ -158,6 +193,8 @@ HEADERS += \
     application/factory/qt_main_view_builder.h \
     application/factory/view_builder.h \
     application/factory/view_director.h \
+    clients/mko/grpc_mko_client.h \
+    clients/mko/mko_client.h \
     errors/error.h \
     factory/creator.h \
     factory/creator_maker.h \
@@ -185,15 +222,7 @@ HEADERS += \
     graphical_views/widgets/main_window.h \
     $$RS485_CLIENT_DIR/rs485_gui_types.h \
     $$RS485_CLIENT_DIR/rs485_microservice_client.h \
-    $$RS485_CONFIG_DIR/rs485_config.h \
-    $$RS485_PROTO_HEADER \
-    $$RS485_GRPC_HEADER
-
-QMAKE_CLEAN += \
-    $$RS485_PROTO_SOURCE \
-    $$RS485_PROTO_HEADER \
-    $$RS485_GRPC_SOURCE \
-    $$RS485_GRPC_HEADER
+    $$RS485_CONFIG_DIR/rs485_config.h
 
 qnx {
     target.path = /tmp/$${TARGET}/bin
@@ -207,9 +236,12 @@ qnx {
 
 DISTFILES += \
     .clangd \
+    $$MKO_API \
+    $$MKO_GENERATE_SCRIPT \
     $$RS485_API \
     $$RS485_GENERATE_SCRIPT \
-    $$RS485_CONFIG_FILE
+    $$PKU_API \
+    $$PKU_GENERATE_SCRIPT
 
 DESTDIR = $$PWD/build/out
 OBJECTS_DIR = $$PWD/build/obj
