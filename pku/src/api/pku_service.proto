@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package api;
+
+message CommandRequest {
+  int32 command_id = 1;
+  string command_param = 2;
+}
+
+message CommandResponse {
+  bool success = 1;
+  string result_text = 2;
+}
+
+service MainService {
+  rpc SendCommand (CommandRequest) returns (CommandResponse);
+}

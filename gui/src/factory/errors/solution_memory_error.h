@@ -9,6 +9,8 @@ class SolutionMemoryError : public SolutionError
 {
 public:
     SolutionMemoryError(const char *const message, const std::type_info &first_error) noexcept;
+
+    const void *get_data() const noexcept override;
 };
 
 #endif

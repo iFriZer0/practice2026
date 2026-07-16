@@ -1,0 +1,145 @@
+#include "rs485_errors.h"
+
+#include <array>
+#include <string>
+#include <utility>
+
+namespace
+{
+
+using DriverError =
+    rs485::driver::v1::PultErrors;
+
+using DriverErrorEntry =
+    std::pair<DriverError, const char *>;
+
+constexpr std::array<DriverErrorEntry, 7>
+    DRIVER_ERROR_MESSAGES
+{{
+    {
+        rs485::driver::v1::NO_ERROR,
+        "No RS-485 driver error"
+    },
+    {
+        rs485::driver::v1::WRONG_BRIDGE_ID,
+        "Invalid bridge identifier"
+    },
+    {
+        rs485::driver::v1::NO_REPLY,
+        "No reply from the transport layer"
+    },
+    {
+        rs485::driver::v1::WRONG_INTERFACE,
+        "Invalid interface or channel"
+    },
+    {
+        rs485::driver::v1::TIMEOUT,
+        "The RS-485 operation timed out"
+    },
+    {
+        rs485::driver::v1::EMPTY_BUFFER,
+        "The received buffer is empty or incomplete"
+    },
+    {
+        rs485::driver::v1::WRONG_PARAM,
+        "Invalid parameters were provided to the driver"
+    }
+}};
+
+std::string driverErrorMessage(
+    DriverError error)
+{
+    for (const DriverErrorEntry &entry :
+         DRIVER_ERROR_MESSAGES)
+    {
+        if (entry.first == error)
+        {
+            return entry.second;
+        }
+    }
+
+    return "Unknown RS-485 driver error";
+}
+
+std::string grpcErrorMessage(
+    const grpc::Status &status)
+{
+    std::string message =
+        "gRPC error " +
+        std::to_string(
+            static_cast<int>(
+                status.error_code()
+            )
+        );
+
+    if (!status.error_message().empty())
+    {
+        message += ": ";
+        message += status.error_message();
+    }
+
+    return message;
+}
+
+} // namespace
+
+Rs485Exception::Rs485Exception(
+    const std::string &message)
+    : std::runtime_error(message)
+{
+}
+
+Rs485ValidationException::
+Rs485ValidationException(
+    const std::string &message)
+    : Rs485Exception(message)
+{
+}
+
+Rs485ConnectionException::
+Rs485ConnectionException(
+    const std::string &message)
+    : Rs485Exception(message)
+{
+}
+
+Rs485StreamException::
+Rs485StreamException(
+    const std::string &message)
+    : Rs485Exception(message)
+{
+}
+
+Rs485DriverException::
+Rs485DriverException(
+    rs485::driver::v1::PultErrors error)
+    : Rs485Exception(
+          driverErrorMessage(error)
+      ),
+      error_code_(error)
+{
+}
+
+rs485::driver::v1::PultErrors
+Rs485DriverException::errorCode() const noexcept
+{
+    return error_code_;
+}
+
+Rs485GrpcException::
+Rs485GrpcException(
+    const grpc::Status &status)
+    : Rs485Exception(
+          grpcErrorMessage(status)
+      ),
+      status_code_(
+          status.error_code()
+      )
+{
+}
+
+grpc::StatusCode
+Rs485GrpcException::statusCode() const noexcept
+{
+    return status_code_;
+}

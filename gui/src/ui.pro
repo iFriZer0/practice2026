@@ -1,4 +1,4 @@
-QT       += core gui widgets
+QT += core gui widgets
 
 CONFIG += c++20
 
@@ -33,9 +33,15 @@ defineTest(generateGRPC) {
         error("Generation script $$script was not found")
     }
 
+    !exists($$api) {
+        error("Proto file $$api was not found")
+    }
+
     generationResult = $$system("\"$$script\"")
+
     base = $$basename(api)
     base = $$replace(base, \\.proto$,)
+
     protoSource = $$outputDirectory/$${base}.pb.cc
     protoHeader = $$outputDirectory/$${base}.pb.h
     grpcSource = $$outputDirectory/$${base}.grpc.pb.cc
@@ -78,18 +84,72 @@ MKO_API = $$clean_path($$MKO_ROOT_DIR/api/mko.proto)
 
 QMAKE_CLEAN += -rf $$MKO_GENERATED_DIR
 
+PKU_ROOT_DIR = $$clean_path($$PWD/../../pku)
+PKU_GENERATED_DIR = $$clean_path($$PWD/grpc_pku_service)
+PKU_GENERATE_SCRIPT = $$clean_path($$PKU_ROOT_DIR/src/api/generate.sh)
+PKU_API = $$clean_path($$PKU_ROOT_DIR/src/api/pku_service.proto)
+
+!generateGRPC($$PKU_GENERATED_DIR, $$PKU_GENERATE_SCRIPT, $$PKU_API) {
+    error("Failed to generate Pku gRPC code")
+}
+
+RS485_ROOT_DIR = $$clean_path($$PWD/../../rs)
+RS485_CLIENT_DIR = $$clean_path($$RS485_ROOT_DIR/client)
+RS485_GENERATED_DIR = $$clean_path($$RS485_ROOT_DIR/build/gui_generated)
+RS485_GENERATE_SCRIPT = $$clean_path($$RS485_ROOT_DIR/scripts/generate_gui_proto.sh)
+RS485_API = $$clean_path($$RS485_ROOT_DIR/api/rs485_service.proto)
+
+!generateGRPC($$RS485_GENERATED_DIR, $$RS485_GENERATE_SCRIPT, $$RS485_API) {
+    error("Failed to generate RS-485 gRPC code")
+}
+
+QMAKE_CLEAN += -rf $$PWD/grpc_pku_service
+
+PKU_PROTO_SOURCE = $$PKU_GENERATED_DIR/pku_service.pb.cc
+PKU_PROTO_HEADER = $$PKU_GENERATED_DIR/pku_service.pb.h
+PKU_GRPC_SOURCE = $$PKU_GENERATED_DIR/pku_service.grpc.pb.cc
+PKU_GRPC_HEADER = $$PKU_GENERATED_DIR/pku_service.grpc.pb.h
+
+RS485_PROTO_SOURCE = $$RS485_GENERATED_DIR/rs485_service.pb.cc
+RS485_PROTO_HEADER = $$RS485_GENERATED_DIR/rs485_service.pb.h
+RS485_GRPC_SOURCE = $$RS485_GENERATED_DIR/rs485_service.grpc.pb.cc
+RS485_GRPC_HEADER = $$RS485_GENERATED_DIR/rs485_service.grpc.pb.h
+
 INCLUDEPATH += \
-    graphical_views/ \
-    graphical_views/widgets \
-    graphical_views/views \
-    graphical_views/views/main \
-    clients/mko \
-    factory \
-    factory/errors \
-    errors \
-    application \
-    application/factory \
-    application/factory/errors
+    $$PWD \
+    $$PWD/graphical_views \
+    $$PWD/graphical_views/widgets \
+    $$PWD/graphical_views/views \
+    $$PWD/graphical_views/views/main \
+    $$PWD/factory \
+    $$PWD/factory/errors \
+    $$PWD/errors \
+    $$PWD/application \
+    $$PWD/application/factory \
+    $$PWD/application/factory/errors \
+    $$PWD/clients/mko \
+    $$MKO_GENERATED_DIR \
+    $$RS485_CLIENT_DIR \
+    $$RS485_GENERATED_DIR \
+    $$PKU_GENERATED_DIR
+
+DEPENDPATH += \
+    $$PWD \
+    $$PWD/graphical_views \
+    $$PWD/graphical_views/widgets \
+    $$PWD/graphical_views/views \
+    $$PWD/graphical_views/views/main \
+    $$PWD/factory \
+    $$PWD/factory/errors \
+    $$PWD/errors \
+    $$PWD/application \
+    $$PWD/application/factory \
+    $$PWD/application/factory/errors \
+    $$PWD/clients/mko \
+    $$MKO_GENERATED_DIR \
+    $$RS485_CLIENT_DIR \
+    $$RS485_GENERATED_DIR \
+    $$PKU_GENERATED_DIR
 
 SOURCES += \
     application/application.cpp \
@@ -115,6 +175,11 @@ SOURCES += \
     graphical_views/views/main/qt_view_pku.cpp \
     graphical_views/views/main/qt_view_rs_485.cpp \
     graphical_views/widgets/main_window.cpp \
+    $$RS485_CLIENT_DIR/rs485_microservice_client.cpp \
+    $$RS485_PROTO_SOURCE \
+    $$RS485_GRPC_SOURCE \
+    $$PKU_PROTO_SOURCE \
+    $$PKU_GRPC_SOURCE \
     main.cpp
 
 HEADERS += \
@@ -153,22 +218,43 @@ HEADERS += \
     graphical_views/views/main/qt_view_pku.h \
     graphical_views/views/main/qt_view_rs_485.h \
     graphical_views/views/main/view.h \
-    graphical_views/widgets/main_window.h
+    graphical_views/widgets/main_window.h \
+    $$RS485_CLIENT_DIR/rs485_gui_types.h \
+    $$RS485_CLIENT_DIR/rs485_microservice_client.h \
+    $$RS485_PROTO_HEADER \
+    $$RS485_GRPC_HEADER \
+    $$PKU_PROTO_HEADER \
+    $$PKU_GRPC_HEADER
 
-# Default rules for deployment.
-qnx: target.path = /tmp/$${TARGET}/bin
-else: unix:!android: target.path = /opt/$${TARGET}/bin
-!isEmpty(target.path): INSTALLS += target
+QMAKE_CLEAN += \
+    $$RS485_PROTO_SOURCE \
+    $$RS485_PROTO_HEADER \
+    $$RS485_GRPC_SOURCE \
+    $$RS485_GRPC_HEADER \
+    $$PKU_PROTO_SOURCE \
+    $$PKU_PROTO_HEADER \
+    $$PKU_GRPC_SOURCE \
+    $$PKU_GRPC_HEADER
+
+qnx {
+    target.path = /tmp/$${TARGET}/bin
+} else: unix:!android {
+    target.path = /opt/$${TARGET}/bin
+}
+
+!isEmpty(target.path) {
+    INSTALLS += target
+}
 
 DISTFILES += \
-    .clangd
+    .clangd \
+    $$RS485_API \
+    $$RS485_GENERATE_SCRIPT \
+    $$PKU_API \
+    $$PKU_GENERATE_SCRIPT
 
 DESTDIR = $$PWD/build/out
-
 OBJECTS_DIR = $$PWD/build/obj
-
 MOC_DIR = $$PWD/build/moc
-
 UI_DIR = $$PWD/build/ui
-
 RCC_DIR = $$PWD/build/rcc
