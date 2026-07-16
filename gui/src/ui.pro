@@ -2,34 +2,94 @@ QT       += core gui widgets
 
 CONFIG += c++20
 
-QMAKE_CXXFLAGS += -Wall -Werror -Wpedantic -Wextra -Wfloat-conversion -Wfloat-equal -Wno-nullability-extension -Wno-deprecated-declarations -Wno-gcc-compat -Wno-gnu-anonymous-struct -Wno-nested-anon-types
+GRPC_CFLAGS = $$system(pkg-config --cflags grpc++ protobuf)
+GRPC_LIBS = $$system(pkg-config --static --libs grpc++ protobuf)
+
+QMAKE_CXXFLAGS += $$GRPC_CFLAGS
+
+LIBS += $$GRPC_LIBS
+
+QMAKE_CXXFLAGS += \
+    -Wall \
+    -Werror \
+    -Wpedantic \
+    -Wextra \
+    -Wfloat-conversion \
+    -Wfloat-equal
+
+macx: QMAKE_CXXFLAGS += -Wno-nullability-extension
+
+PKG_CONFIG_PATHS = $$system(pkg-config --cflags-only-I grpc++ protobuf)
+PKG_CONFIG_SYSTEM_PATHS = $$replace(PKG_CONFIG_PATHS, -I, -isystem )
+
+QMAKE_CXXFLAGS += $$PKG_CONFIG_SYSTEM_PATHS
+
+defineTest(generateGRPC) {
+    outputDirectory = $$1
+    script = $$2
+    api = $$3
+
+    !exists($$script) {
+        error("Generation script $$script was not found")
+    }
+
+    generationResult = $$system("\"$$script\"")
+    base = $$basename(api)
+    base = $$replace(base, \\.proto$,)
+    protoSource = $$outputDirectory/$${base}.pb.cc
+    protoHeader = $$outputDirectory/$${base}.pb.h
+    grpcSource = $$outputDirectory/$${base}.grpc.pb.cc
+    grpcHeader = $$outputDirectory/$${base}.grpc.pb.h
+
+    !exists($$protoSource) {
+        error("Generated file $$protoSource was not found")
+    }
+    !exists($$protoHeader) {
+        error("Generated file $$protoHeader was not found")
+    }
+    !exists($$grpcSource) {
+        error("Generated file $$grpcSource was not found")
+    }
+    !exists($$grpcHeader) {
+        error("Generated file $$grpcHeader was not found")
+    }
+
+    SOURCES += $$protoSource $$grpcSource
+    HEADERS += $$protoHeader $$grpcHeader
+    INCLUDEPATH += $$outputDirectory
+    DEPENDPATH += $$outputDirectory
+
+    export(SOURCES)
+    export(HEADERS)
+    export(INCLUDEPATH)
+    export(DEPENDPATH)
+
+    return(true)
+}
+
+MKO_ROOT_DIR = $$clean_path($$PWD/../../mko)
+MKO_GENERATED_DIR = $$clean_path($$PWD/generated/mko)
+MKO_GENERATE_SCRIPT = $$clean_path($$MKO_ROOT_DIR/api/generate-gui-cpp.sh)
+MKO_API = $$clean_path($$MKO_ROOT_DIR/api/mko.proto)
+
+!generateGRPC($$MKO_GENERATED_DIR, $$MKO_GENERATE_SCRIPT, $$MKO_API) {
+    error("Failed to generate MKO gRPC code")
+}
+
+QMAKE_CLEAN += -rf $$MKO_GENERATED_DIR
 
 INCLUDEPATH += \
-    /opt/homebrew/include \
-    /usr/local/include \
     graphical_views/ \
     graphical_views/widgets \
     graphical_views/views \
     graphical_views/views/main \
     clients/mko \
-    generated/mko \
     factory \
     factory/errors \
     errors \
     application \
     application/factory \
     application/factory/errors
-
-LIBS += \
-    -L/opt/homebrew/lib \
-    -L/usr/local/lib \
-    -lgrpc++ \
-    -lgrpc \
-    -lprotobuf \
-    -lgpr
-
-macx: LIBS += $$system(find /opt/homebrew/lib -maxdepth 1 -name 'libabsl_*.dylib' ! -name '*.2601.*' -print)
-linux: LIBS += $$system(find /usr/lib -maxdepth 1 -name 'libabsl_*.so' -print)
 
 SOURCES += \
     application/application.cpp \
@@ -55,8 +115,6 @@ SOURCES += \
     graphical_views/views/main/qt_view_pku.cpp \
     graphical_views/views/main/qt_view_rs_485.cpp \
     graphical_views/widgets/main_window.cpp \
-    generated/mko/mko.grpc.pb.cc \
-    generated/mko/mko.pb.cc \
     main.cpp
 
 HEADERS += \
@@ -95,9 +153,7 @@ HEADERS += \
     graphical_views/views/main/qt_view_pku.h \
     graphical_views/views/main/qt_view_rs_485.h \
     graphical_views/views/main/view.h \
-    graphical_views/widgets/main_window.h \
-    generated/mko/mko.grpc.pb.h \
-    generated/mko/mko.pb.h
+    graphical_views/widgets/main_window.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
