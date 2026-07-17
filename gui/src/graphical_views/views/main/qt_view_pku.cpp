@@ -515,7 +515,8 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget)
         for (QListWidgetItem *item : selected) {
             indices << item->text();
         }
-        QString param{indices.join(";")};
+        indices.sort();
+        QString param{indices.join(";") + ";" + "op_id"};
         lbl_read_pku_status->setText("Чтение...");
 
         api::CommandRequest request;
@@ -538,8 +539,8 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget)
                 QStringList parts = QString::fromStdString(response.result_text()).split(';');
                 lbl_read_pku_status->setText("Успешно прочитано");
                 pku_log->append("--- Длительности ПКУ ---");
-                for (int i{0}; i < parts.size() && i < indices.size(); ++i) {
-                    pku_log->append(QString{"ПКУ %1: %2"}.arg(indices[i], parts[i]));
+                for (int i{0}; i < indices.size(); ++i) {
+                    pku_log->append(QString{"ПКУ %1: %2"}.arg(indices[i], parts[indices[i].toInt() - 1]));
                 }
             }
         } else {
