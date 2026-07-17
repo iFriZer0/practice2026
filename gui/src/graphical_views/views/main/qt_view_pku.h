@@ -19,6 +19,7 @@
 #include <QListWidget>
 #include <QIntValidator>
 #include <QObject>
+#include <cstdint>
 #include <memory>
 #include <typeinfo>
 #include "error.h"
@@ -73,6 +74,8 @@ private:
     QStackedWidget *stacked_widget;
 
     std::shared_ptr<grpc::ChannelInterface> channel_;
+
+    std::uint64_t operation_identifier{0};
 };
 
 #endif
