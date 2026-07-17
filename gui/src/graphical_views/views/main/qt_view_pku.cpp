@@ -257,8 +257,6 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget)
     le_mac->setPlaceholderText("AA:BB:CC:DD:EE:FF");
     grid_layout->addWidget(le_mac, 1, 1);
 
-    QRegularExpression ip_regex{"^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"};
-
     grid_layout->addWidget(create_label("IP-адрес"), 2, 0);
     QLineEdit *le_ip{create_line_edit(central_widget)};
     le_ip->setPlaceholderText("192.168.1.1");
@@ -489,7 +487,9 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget)
 
             api::CommandRequest request;
             request.set_command_id(4);
-            request.set_command_param((description + ";" + mac + ";" + ip + ";" + mask + ";" + gateway + ";" + dns + ";" + dhcp + ";" + "op_id").toStdString());
+            request.set_command_param((description + ";" + mac + ";" + ip + ";" + mask + ";" + gateway + ";" + dns + ";" + dhcp + ";" + QString::number(operation_identifier)).toStdString());
+
+            ++operation_identifier;
 
             api::CommandResponse response;
             grpc::ClientContext context;
@@ -516,13 +516,14 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget)
             indices << item->text();
         }
         indices.sort();
-        QString param{indices.join(";") + ";" + "op_id"};
+        QString param{indices.join(";") + ";" + QString::number(operation_identifier)};
         lbl_read_pku_status->setText("Чтение...");
 
         api::CommandRequest request;
         request.set_command_id(5);
         request.set_command_param(param.toStdString());
 
+        ++operation_identifier;
 
         api::CommandResponse response;
         grpc::ClientContext context;
@@ -549,13 +550,14 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget)
     });
 
     QObject::connect(btn_set_mode, &QPushButton::clicked, [chan_select, mode_select, lbl_set_mode_status, this]() {
-        QString param = QString::number(chan_select->currentIndex() + 1) + ";" + QString::number(mode_select->currentIndex()) + ";" + "op_id";
+        QString param = QString::number(chan_select->currentIndex() + 1) + ";" + QString::number(mode_select->currentIndex()) + ";" + QString::number(operation_identifier);
         lbl_set_mode_status->setText("Применение...");
 
         api::CommandRequest request;
         request.set_command_id(6);
         request.set_command_param(param.toStdString());
 
+        ++operation_identifier;
 
         api::CommandResponse response;
         grpc::ClientContext context;
@@ -582,12 +584,14 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget)
             if (!ok_time) {
                 lbl_send_rk_status->setText("Заполните длительность");
             } else {
-                QString param = rk_num_input->text() + ";" + rk_time_input->text() + ";" + "op_id";
+                QString param = rk_num_input->text() + ";" + rk_time_input->text() + ";" + QString::number(operation_identifier);
                 lbl_send_rk_status->setText("Отправка...");
 
                 ::api::CommandRequest request;
                 request.set_command_id(7);
                 request.set_command_param(param.toStdString());
+
+                ++operation_identifier;
 
                 ::api::CommandResponse response;
                 grpc::ClientContext context;
