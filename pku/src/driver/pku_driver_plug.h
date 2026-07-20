@@ -86,6 +86,8 @@ private:
     static constexpr std::size_t RK_COUNT{48};
     static constexpr std::uint32_t INITIAL_RK_DURATION{1};
 
+    static const std::string VERSION;
+
     MainInformation main_information;
 
     std::vector<std::uint32_t> pku_durations_ms;
