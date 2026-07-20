@@ -26,9 +26,9 @@ class IntegrationTests(unittest.TestCase):
     def setUp(self) -> None:
         ip: str
         port: str
-        with open("../configuration/pku_service_address.txt") as file:
-    	    ip = file.readline().rstrip()
-    	    port = file.readline().rstrip()
+        with open("../configuration/pku_service_address.txt", "r", encoding="utf-8") as file:
+            ip = file.readline().rstrip()
+            port = file.readline().rstrip()
         self.channel = grpc.insecure_channel(ip + ":" + port)
         self.stub = pku_service_pb2_grpc.MainServiceStub(self.channel)
 
