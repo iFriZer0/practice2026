@@ -1,0 +1,268 @@
+@startuml c_4
+
+!theme plain
+
+skinparam ClassAttributeIconSize 0
+
+left to right direction
+
+skinparam Linetype ortho
+
+interface MainServiceServicer {
+    +send_command(request: CommandRequest, context: ServicerContext): CommandResponse
+}
+
+MainServiceServicer ..> CommandRequest
+MainServiceServicer ..> CommandResponse
+
+class CallingPkuService {
+    executors: Executor<String, CommandResponse>[1..*]
+
+    +send_command(request: CommandRequest, context: ServicerContext): CommandResponse
+}
+
+CallingPkuService --^ MainServiceServicer
+CallingPkuService o--> Executor
+
+class CommandRequest {
+    +command_id: Integer
+    +command_param: String
+}
+
+class CommandResponse {
+    +success: Boolean
+    +result_text: String
+}
+
+interface Executor<Data, Result> {
+    +execute(data: Data): Result
+}
+
+class VersionCheckExecutor {
+    -caller: DriverCaller
+
+    +execute(data: String): CommandResponse
+}
+
+VersionCheckExecutor --^ Executor
+VersionCheckExecutor o--> DriverCaller
+VersionCheckExecutor ..> CommandResponse
+VersionCheckExecutor ..> VersionInfoToCommandResponse
+
+class ConnectionCheckExecutor {
+    -caller: DriverCaller
+
+    +execute(data: String): CommandResponse
+}
+
+ConnectionCheckExecutor --^ Executor
+ConnectionCheckExecutor o--> DriverCaller
+ConnectionCheckExecutor ..> CommandResponse
+ConnectionCheckExecutor ..> StandardResponseToCommandResponse
+
+class HardwareStatusExecutor {
+    -caller: DriverCaller
+
+    +execute(data: String): CommandResponse
+}
+
+HardwareStatusExecutor --^ Executor
+HardwareStatusExecutor o--> DriverCaller
+HardwareStatusExecutor ..> CommandResponse
+HardwareStatusExecutor ..> StandardResponseToCommandResponse
+
+class MainInformationReadingExecutor {
+    -caller: DriverCaller
+
+    +execute(data: String): CommandResponse
+}
+
+MainInformationReadingExecutor --^ Executor
+MainInformationReadingExecutor o--> DriverCaller
+MainInformationReadingExecutor ..> CommandResponse
+MainInformationReadingExecutor ..> ReadMemoryResponseToCommandResponse
+
+class MainInformationWritingExecutor {
+    -caller: DriverCaller
+
+    +execute(data: String): CommandResponse
+}
+
+MainInformationWritingExecutor --^ Executor
+MainInformationWritingExecutor o--> DriverCaller
+MainInformationWritingExecutor ..> CommandResponse
+MainInformationWritingExecutor ..> StrToWriteMainInfoRequest
+MainInformationWritingExecutor ..> StandardResponseToCommandResponse
+
+class PkuReadingExecutor {
+    -caller: DriverCaller
+
+    +execute(data: String): CommandResponse
+}
+
+PkuReadingExecutor --^ Executor
+PkuReadingExecutor o--> DriverCaller
+PkuReadingExecutor ..> CommandResponse
+PkuReadingExecutor ..> StrToReadPkuRequest
+PkuReadingExecutor ..> ReadPkuResponseToCommandResponse
+
+class PkuModeSettingExecutor {
+    -caller: DriverCaller
+
+    +execute(data: String): CommandResponse
+}
+
+PkuModeSettingExecutor --^ Executor
+PkuModeSettingExecutor o--> DriverCaller
+PkuModeSettingExecutor ..> CommandResponse
+PkuModeSettingExecutor ..> StrToSetPkuModeRequest
+PkuModeSettingExecutor ..> StandardResponseToCommandResponse
+
+class RkSendingExecutor {
+    -caller: DriverCaller
+
+    +execute(data: String): CommandResponse
+}
+
+RkSendingExecutor --^ Executor
+RkSendingExecutor o--> DriverCaller
+RkSendingExecutor ..> CommandResponse
+RkSendingExecutor ..> StrToSendRkByIndexRequest
+RkSendingExecutor ..> StandardResponseToCommandResponse
+
+interface DriverCaller {
+    +get_version(): VersionInfo
+    +check_connection(): StandardResponse
+    +get_hardware_status(): StandardResponse
+    +read_main_information(): ReadMemoryResponse
+    +write_main_information(request: WriteMainInfoRequest): StandardResponse
+    +read_pku(request: ReadPkuRequest): ReadPkuResponse
+    +set_pku_mode(request: SetPkuModeRequest): StandardResponse
+    +send_rk_by_index(request: SendRkByIndexRequest): StandardResponse
+}
+
+DriverCaller ..> VersionInfo
+DriverCaller ..> StandardResponse
+DriverCaller ..> ReadMemoryResponse
+DriverCaller ..> WriteMainInfoRequest
+DriverCaller ..> ReadPkuRequest
+DriverCaller ..> ReadPkuResponse
+DriverCaller ..> SetPkuModeRequest
+DriverCaller ..> SendRkByIndexRequest
+
+class VersionInfo {
+    +version: String
+}
+
+class StandardResponse {
+    +success: Boolean
+    +error_message: String
+}
+
+class ReadMemoryResponse {
+    +success: Boolean
+    +error_message: String
+    +data: String
+}
+
+class WriteMainInfoRequest {
+    +description: String
+    +mac: String
+    +ip: String
+    +netmask: String
+    +gateway: String
+    +dns: String
+    +use_dhcp: Boolean
+    +operation_id: String   
+}
+
+class ReadPkuRequest {
+    +indices: Integer[0..*]
+    +operation_id: String
+}
+
+class ReadPkuResponse {
+    +success: Boolean
+    +error_message: String
+    +durations_ms: Integer[0..*]
+}
+
+class SetPkuModeRequest {
+    +pku_index: Integer
+    +mode: Integer
+    +operation_id: String
+}
+
+class SendRkByIndexRequest {
+    rk_index: Integer
+    +duration_ms: Integer
+    +operation_id: String
+}
+
+interface Converter<Source, Destination> {
+    +convert(source: Source): Destination
+}
+
+class ReadMemoryResponseToCommandResponse {
+    +convert(source: ReadMemoryResponse): CommandResponse
+}
+
+ReadMemoryResponseToCommandResponse --^ Converter
+ReadMemoryResponseToCommandResponse ..> ReadMemoryResponse
+ReadMemoryResponseToCommandResponse ..> CommandResponse
+
+class ReadPkuResponseToCommandResponse {
+    +convert(source: ReadPkuResponse): CommandResponse
+}
+
+ReadPkuResponseToCommandResponse --^ Converter
+ReadPkuResponseToCommandResponse ..> ReadPkuResponse
+ReadPkuResponseToCommandResponse ..> CommandResponse
+
+class StandardResponseToCommandResponse {
+    +convert(source: StandardResponse): CommandResponse
+}
+
+StandardResponseToCommandResponse --^ Converter
+StandardResponseToCommandResponse ..> StandardResponse
+StandardResponseToCommandResponse ..> CommandResponse
+
+class VersionInfoToCommandResponse {
+    +convert(source: VersionInfo): CommandResponse
+}
+
+VersionInfoToCommandResponse --^ Converter
+VersionInfoToCommandResponse ..> VersionInfo
+VersionInfoToCommandResponse ..> CommandResponse
+
+class StrToReadPkuRequest {
+    +convert(source: String): ReadPkuRequest
+}
+
+StrToReadPkuRequest --^ Converter
+StrToReadPkuRequest ..> ReadPkuRequest
+
+class StrToSendRkByIndexRequest {
+    +convert(source: String): SendRkByIndexRequest
+}
+
+StrToSendRkByIndexRequest --^ Converter
+StrToSendRkByIndexRequest ..> SendRkByIndexRequest
+
+class StrToSetPkuModeRequest {
+    +convert(source: String): PkuModeRequest
+}
+
+StrToSetPkuModeRequest --^ Converter
+StrToSetPkuModeRequest ..> SetPkuModeRequest
+
+class StrToWriteMainInfoRequest {
+    +convert(source: String): WriteMainInfoRequest
+}
+
+StrToWriteMainInfoRequest --^ Converter
+StrToWriteMainInfoRequest ..> WriteMainInfoRequest
+
+hide circle
+
+@enduml
