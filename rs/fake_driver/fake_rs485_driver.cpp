@@ -35,7 +35,7 @@ std::string bytesToHex(const std::string& data)
 grpc::Status FakeRs485Driver::SendData(
     grpc::ServerContext* context,
     grpc::ServerReaderWriter<
-        rs485::driver::v1::SendDataResponce,
+        rs485::driver::v1::SendDataResponse,
         rs485::driver::v1::SendDataRequest>* stream)
 {
     try
@@ -54,7 +54,7 @@ grpc::Status FakeRs485Driver::SendData(
                 << bytesToHex(request.data())
                 << '\n';
 
-            rs485::driver::v1::SendDataResponce response;
+            rs485::driver::v1::SendDataResponse response;
 
             response.set_channel_id(
                 request.channel_id()
