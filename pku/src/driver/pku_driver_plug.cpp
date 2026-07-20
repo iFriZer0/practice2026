@@ -149,9 +149,11 @@ grpc::Status PkuDriverPlug::GetVersion(
         pku::driver::v1::VersionInfo *response
 )
 {
-    response->set_version("v1");
+    response->set_version(VERSION);
     return grpc::Status::OK;
 }
+
+const std::string PkuDriverPlug::VERSION{"0.04"};
 
 std::string PkuDriverPlug::convert_main_information() const
 {
