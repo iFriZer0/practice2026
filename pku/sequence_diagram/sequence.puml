@@ -1,0 +1,18 @@
+@startuml sequence
+
+!theme plain
+
+participant "Основная программа" as GUI
+participant "Микросервис РК/ПКУ" as PkuService
+participant "Драйвер РК/ПКУ" as PkuDriver
+
+GUI -> PkuService: Запрос на выполнение команды драйвера
+activate PkuService
+PkuService -> PkuDriver: Отправка команды
+activate PkuDriver
+PkuDriver -> PkuService: Отправка результата выполнения
+deactivate PkuDriver
+PkuService -> GUI: Отправка результата выполнения запроса
+deactivate PkuService
+
+@enduml
