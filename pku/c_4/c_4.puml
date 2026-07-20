@@ -16,7 +16,7 @@ MainServiceServicer ..> CommandRequest
 MainServiceServicer ..> CommandResponse
 
 class CallingPkuService {
-    executors: Executor<String, CommandResponse>[1..*]
+    -executors: Executor<String, CommandResponse>[1..*]
 
     +send_command(request: CommandRequest, context: ServicerContext): CommandResponse
 }
@@ -149,6 +149,22 @@ DriverCaller ..> ReadPkuRequest
 DriverCaller ..> ReadPkuResponse
 DriverCaller ..> SetPkuModeRequest
 DriverCaller ..> SendRkByIndexRequest
+
+class ConnectingDriverCaller {
+    -channel: Channel
+    -stub: PkuDriverStub
+
+    +get_version(): VersionInfo
+    +check_connection(): StandardResponse
+    +get_hardware_status(): StandardResponse
+    +read_main_information(): ReadMemoryResponse
+    +write_main_information(request: WriteMainInfoRequest): StandardResponse
+    +read_pku(request: ReadPkuRequest): ReadPkuResponse
+    +set_pku_mode(request: SetPkuModeRequest): StandardResponse
+    +send_rk_by_index(request: SendRkByIndexRequest): StandardResponse
+}
+
+ConnectingDriverCaller --^ DriverCaller
 
 class VersionInfo {
     +version: String
