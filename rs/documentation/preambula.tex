@@ -1,0 +1,71 @@
+% Кодировка и русский язык
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english,russian]{babel}
+
+% Основное оформление
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{indentfirst}
+\usepackage{titlesec}
+\usepackage{tocloft}
+\usepackage{enumitem}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+
+% Поля документа
+\geometry{
+    left=30mm,
+    right=15mm,
+    top=20mm,
+    bottom=20mm
+}
+
+% Абзацы и интервалы
+\onehalfspacing
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{0pt}
+\frenchspacing
+
+% Заголовки
+\titleformat{\chapter}[block]
+    {\large\bfseries}
+    {\thechapter}
+    {0.5em}
+    {}
+\titlespacing*{\chapter}{0pt}{-20pt}{14pt}
+
+\titleformat{\section}[block]
+    {\large\bfseries}
+    {\thesection}
+    {0.5em}
+    {}
+\titlespacing*{\section}{0pt}{14pt}{8pt}
+
+\titleformat{\subsection}[block]
+    {\normalsize\bfseries}
+    {\thesubsection}
+    {0.5em}
+    {}
+\titlespacing*{\subsection}{0pt}{12pt}{6pt}
+
+% Содержание с точками до номера страницы
+\setlength{\cftchapindent}{0pt}
+\setlength{\cftsecindent}{1.25cm}
+\setlength{\cftsubsecindent}{2.5cm}
+\renewcommand{\cftchapleader}{\cftdotfill{\cftdotsep}}
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+\renewcommand{\cftsubsecleader}{\cftdotfill{\cftdotsep}}
+
+% Списки
+\setlist[itemize]{label=--, leftmargin=1.25cm, itemsep=2pt, topsep=4pt}
+\setlist[enumerate]{leftmargin=1.25cm, itemsep=2pt, topsep=4pt}
+
+% Таблицы
+\renewcommand{\arraystretch}{1.2}
+\setlength{\tabcolsep}{5pt}
+
+% Папка для иллюстраций, если они появятся
+\graphicspath{{images/}}
