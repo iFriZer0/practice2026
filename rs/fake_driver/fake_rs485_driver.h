@@ -12,7 +12,7 @@ public:
     grpc::Status SendData(
         grpc::ServerContext* context,
         grpc::ServerReaderWriter<
-            rs485::driver::v1::SendDataResponce,
+            rs485::driver::v1::SendDataResponse,
             rs485::driver::v1::SendDataRequest>* stream
     ) override;
 

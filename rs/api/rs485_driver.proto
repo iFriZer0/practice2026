@@ -31,7 +31,7 @@ message SendDataRequest {
 }
 
 // Ответ на отправку данных
-message SendDataResponce {
+message SendDataResponse {
   bool success = 1;
   uint32 channel_id = 2;
   PultErrors error_message = 3;
@@ -47,7 +47,7 @@ message ReceiveDataResponse {
 
 service Rs485Driver {
   // Отправка данных устройству (двунаправленный стрим запрос/ответ)
-  rpc SendData (stream SendDataRequest) returns (stream SendDataResponce);
+  rpc SendData (stream SendDataRequest) returns (stream SendDataResponse);
 
   // Подписка на прием данных с прибора: клиент один раз отправляет запрос,
   // сервер непрерывно стримит клиенту массивы данных по мере их поступления

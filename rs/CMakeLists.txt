@@ -29,12 +29,6 @@ find_package(
 )
 
 find_package(
-    absl
-    CONFIG
-    REQUIRED
-)
-
-find_package(
     Threads
     REQUIRED
 )
@@ -183,9 +177,6 @@ target_link_libraries(
     PUBLIC
         gRPC::grpc++
         protobuf::libprotobuf
-
-        absl::log
-        absl::check
 )
 
 add_library(
@@ -213,9 +204,6 @@ target_link_libraries(
     PUBLIC
         gRPC::grpc++
         protobuf::libprotobuf
-
-        absl::log
-        absl::check
 )
 
 add_executable(
@@ -254,6 +242,13 @@ target_link_libraries(
 )
 
 if(RS485_BUILD_TESTING)
+    enable_testing()
+
+    find_package(
+        GTest
+        REQUIRED
+    )
+
     set(
         RS485_FAKE_DRIVER_SOURCES
         "fake_driver/fake_rs485_driver.cpp"
@@ -329,6 +324,58 @@ if(RS485_BUILD_TESTING)
             rs485_service_proto
             Threads::Threads
     )
+
+    add_executable(
+        rs485_integration_tests
+
+        test_client/integration_tests.cpp
+
+        fake_driver/fake_rs485_driver.cpp
+
+        client/rs485_driver_client.cpp
+        client/rs485_subscriber.cpp
+
+        common/rs485_errors.cpp
+        common/rs485_utils.cpp
+
+        config/rs485_config.cpp
+
+        service/rs485_service.cpp
+    )
+
+    target_include_directories(
+        rs485_integration_tests
+        PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/client"
+            "${CMAKE_CURRENT_SOURCE_DIR}/common"
+            "${CMAKE_CURRENT_SOURCE_DIR}/config"
+            "${CMAKE_CURRENT_SOURCE_DIR}/service"
+            "${CMAKE_CURRENT_SOURCE_DIR}/fake_driver"
+    )
+
+    target_compile_definitions(
+        rs485_integration_tests
+        PRIVATE
+            RS485_TEST_CONFIG_PATH="${CMAKE_CURRENT_SOURCE_DIR}/config/config.yaml"
+    )
+
+    target_link_libraries(
+        rs485_integration_tests
+        PRIVATE
+            rs485_driver_proto
+            rs485_service_proto
+
+            Threads::Threads
+            yaml-cpp
+            GTest::gtest_main
+    )
+
+    include(GoogleTest)
+
+    gtest_discover_tests(
+        rs485_integration_tests
+        DISCOVERY_TIMEOUT 30
+    )
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
@@ -353,6 +400,16 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     if(TARGET rs485_test_client)
         target_compile_options(
             rs485_test_client
+            PRIVATE
+                -Wall
+                -Wextra
+                -Wpedantic
+        )
+    endif()
+
+    if(TARGET rs485_integration_tests)
+        target_compile_options(
+            rs485_integration_tests
             PRIVATE
                 -Wall
                 -Wextra
