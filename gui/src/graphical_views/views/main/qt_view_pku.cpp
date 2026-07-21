@@ -511,41 +511,43 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget)
         if (selected.isEmpty()) {
             lbl_read_pku_status->setText("Не выбраны ПКУ");
         }
-        QStringList indices;
-        for (QListWidgetItem *item : selected) {
-            indices << item->text();
-        }
-        indices.sort();
-        QString param{indices.join(";") + ";" + QString::number(operation_identifier)};
-        lbl_read_pku_status->setText("Чтение...");
-
-        api::CommandRequest request;
-        request.set_command_id(5);
-        request.set_command_param(param.toStdString());
-
-        ++operation_identifier;
-
-        api::CommandResponse response;
-        grpc::ClientContext context;
-
-        auto stub = ::api::MainService::NewStub(channel_);
-
-        grpc::Status status = stub->SendCommand(&context, request, &response);
-
-        if (status.ok()) {
-            if (!response.success()) {
-                lbl_read_pku_status->setText("Ошибка чтения");
-                pku_log->append(QString::fromStdString("Ошибка \"" + response.result_text() + "\""));
-            } else {
-                QStringList parts = QString::fromStdString(response.result_text()).split(';');
-                lbl_read_pku_status->setText("Успешно прочитано");
-                pku_log->append("--- Длительности ПКУ ---");
-                for (int i{0}; i < indices.size(); ++i) {
-                    pku_log->append(QString{"ПКУ %1: %2"}.arg(indices[i], parts[indices[i].toInt() - 1]));
-                }
+        else {
+            QStringList indices;
+            for (QListWidgetItem *item : selected) {
+                indices << item->text();
             }
-        } else {
-            lbl_read_pku_status->setText("Ошибка сети");
+            indices.sort();
+            QString param{indices.join(";") + ";" + QString::number(operation_identifier)};
+            lbl_read_pku_status->setText("Чтение...");
+
+            api::CommandRequest request;
+            request.set_command_id(5);
+            request.set_command_param(param.toStdString());
+
+            ++operation_identifier;
+
+            api::CommandResponse response;
+            grpc::ClientContext context;
+
+            auto stub = ::api::MainService::NewStub(channel_);
+
+            grpc::Status status = stub->SendCommand(&context, request, &response);
+
+            if (status.ok()) {
+                if (!response.success()) {
+                    lbl_read_pku_status->setText("Ошибка чтения");
+                    pku_log->append(QString::fromStdString("Ошибка \"" + response.result_text() + "\""));
+                } else {
+                    QStringList parts = QString::fromStdString(response.result_text()).split(';');
+                    lbl_read_pku_status->setText("Успешно прочитано");
+                    pku_log->append("--- Длительности ПКУ ---");
+                    for (int i{0}; i < indices.size(); ++i) {
+                        pku_log->append(QString{"ПКУ %1: %2"}.arg(indices[i], parts[indices[i].toInt() - 1]));
+                    }
+                }
+            } else {
+                lbl_read_pku_status->setText("Ошибка сети");
+            }
         }
     });
 
