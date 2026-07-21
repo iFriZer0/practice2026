@@ -109,18 +109,6 @@ QListWidget *QtViewPKU::create_list_widget(QWidget *const parent) const noexcept
     return list_widget;
 }
 
-QIntValidator *QtViewPKU::create_int_validator(const int minimum, const int maximum, QObject *const parent) const noexcept
-{
-    QIntValidator *int_validator{nullptr};
-    try {
-        int_validator = new QIntValidator{minimum, maximum, parent};
-    }
-    catch (const std::bad_alloc &) {
-        std::cerr << "Не удалось QIntValidator" << std::endl;
-    }
-    return int_validator;
-}
-
 QString QtViewPKU::parse_mac(const QString &mac) const noexcept
 {
     QString result;
@@ -306,7 +294,6 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget)
 
     QLabel *rk_time_label = create_label("Длительность (мс)");
     QLineEdit *rk_time_input = create_line_edit(central_widget);
-    rk_time_input->setValidator(create_int_validator(1, INT_MAX, stacked_widget));
 
     QPushButton *btn_send_rk = create_button("Выдать РК", central_widget);
 
@@ -577,13 +564,10 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget)
     });
 
     QObject::connect(btn_send_rk, &QPushButton::clicked, [rk_num_input, lbl_send_rk_status, rk_time_input, this]() {
-        bool ok_num, ok_time;
-        rk_num_input->text().toInt(&ok_num);
-        if (!ok_num) {
+        if (rk_num_input->text().isEmpty()) {
             lbl_send_rk_status->setText("Заполните номер РК");
         } else {
-            rk_time_input->text().toInt(&ok_time);
-            if (!ok_time) {
+            if (rk_time_input->text().isEmpty()) {
                 lbl_send_rk_status->setText("Заполните длительность");
             } else {
                 QString param = rk_num_input->text() + ";" + rk_time_input->text() + ";" + QString::number(operation_identifier);
