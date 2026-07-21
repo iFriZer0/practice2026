@@ -2,22 +2,16 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(
-    cd "$(dirname "${BASH_SOURCE[0]}")"
+ROOT_DIR="$(
+    cd "$(dirname "${BASH_SOURCE[0]}")/.."
     pwd
 )"
 
-PROJECT_DIR="$(
-    cd "${SCRIPT_DIR}/.."
-    pwd
-)"
-
-BUILD_DIR="${PROJECT_DIR}/build-test"
+BUILD_DIR="${ROOT_DIR}/build-test"
 
 cmake \
-    -S "${PROJECT_DIR}" \
+    -S "${ROOT_DIR}" \
     -B "${BUILD_DIR}" \
-    -DCMAKE_BUILD_TYPE=Debug \
     -DRS485_BUILD_TESTING=ON
 
 cmake \

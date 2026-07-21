@@ -189,7 +189,7 @@ SendDataResult Rs485DriverClient::sendData(
 
     stream->WritesDone();
 
-    rs485::driver::v1::SendDataResponce response;
+    rs485::driver::v1::SendDataResponse response;
 
     const bool response_received =
         stream->Read(&response);
