@@ -2,8 +2,8 @@
 
 !theme plain
 
-participant "Основная программа" as GUI
-participant "Микросервис РК/ПКУ" as PkuService
+participant "Клиент" as GUI
+participant "Сервис РК/ПКУ" as PkuService
 participant "Драйвер РК/ПКУ" as PkuDriver
 
 GUI -> PkuService: Запрос на выполнение команды драйвера
