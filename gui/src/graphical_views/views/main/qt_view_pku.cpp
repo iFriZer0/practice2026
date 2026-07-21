@@ -109,18 +109,6 @@ QListWidget *QtViewPKU::create_list_widget(QWidget *const parent) const noexcept
     return list_widget;
 }
 
-QIntValidator *QtViewPKU::create_int_validator(const int minimum, const int maximum, QObject *const parent) const noexcept
-{
-    QIntValidator *int_validator{nullptr};
-    try {
-        int_validator = new QIntValidator{minimum, maximum, parent};
-    }
-    catch (const std::bad_alloc &) {
-        std::cerr << "Не удалось QIntValidator" << std::endl;
-    }
-    return int_validator;
-}
-
 QString QtViewPKU::parse_mac(const QString &mac) const noexcept
 {
     QString result;
@@ -306,7 +294,6 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget)
 
     QLabel *rk_time_label = create_label("Длительность (мс)");
     QLineEdit *rk_time_input = create_line_edit(central_widget);
-    rk_time_input->setValidator(create_int_validator(1, INT_MAX, stacked_widget));
 
     QPushButton *btn_send_rk = create_button("Выдать РК", central_widget);
 
@@ -511,41 +498,43 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget)
         if (selected.isEmpty()) {
             lbl_read_pku_status->setText("Не выбраны ПКУ");
         }
-        QStringList indices;
-        for (QListWidgetItem *item : selected) {
-            indices << item->text();
-        }
-        indices.sort();
-        QString param{indices.join(";") + ";" + QString::number(operation_identifier)};
-        lbl_read_pku_status->setText("Чтение...");
-
-        api::CommandRequest request;
-        request.set_command_id(5);
-        request.set_command_param(param.toStdString());
-
-        ++operation_identifier;
-
-        api::CommandResponse response;
-        grpc::ClientContext context;
-
-        auto stub = ::api::MainService::NewStub(channel_);
-
-        grpc::Status status = stub->SendCommand(&context, request, &response);
-
-        if (status.ok()) {
-            if (!response.success()) {
-                lbl_read_pku_status->setText("Ошибка чтения");
-                pku_log->append(QString::fromStdString("Ошибка \"" + response.result_text() + "\""));
-            } else {
-                QStringList parts = QString::fromStdString(response.result_text()).split(';');
-                lbl_read_pku_status->setText("Успешно прочитано");
-                pku_log->append("--- Длительности ПКУ ---");
-                for (int i{0}; i < indices.size(); ++i) {
-                    pku_log->append(QString{"ПКУ %1: %2"}.arg(indices[i], parts[indices[i].toInt() - 1]));
-                }
+        else {
+            QStringList indices;
+            for (QListWidgetItem *item : selected) {
+                indices << item->text();
             }
-        } else {
-            lbl_read_pku_status->setText("Ошибка сети");
+            indices.sort();
+            QString param{indices.join(";") + ";" + QString::number(operation_identifier)};
+            lbl_read_pku_status->setText("Чтение...");
+
+            api::CommandRequest request;
+            request.set_command_id(5);
+            request.set_command_param(param.toStdString());
+
+            ++operation_identifier;
+
+            api::CommandResponse response;
+            grpc::ClientContext context;
+
+            auto stub = ::api::MainService::NewStub(channel_);
+
+            grpc::Status status = stub->SendCommand(&context, request, &response);
+
+            if (status.ok()) {
+                if (!response.success()) {
+                    lbl_read_pku_status->setText("Ошибка чтения");
+                    pku_log->append(QString::fromStdString("Ошибка \"" + response.result_text() + "\""));
+                } else {
+                    QStringList parts = QString::fromStdString(response.result_text()).split(';');
+                    lbl_read_pku_status->setText("Успешно прочитано");
+                    pku_log->append("--- Длительности ПКУ ---");
+                    for (int i{0}; i < indices.size(); ++i) {
+                        pku_log->append(QString{"ПКУ %1: %2"}.arg(indices[i], parts[indices[i].toInt() - 1]));
+                    }
+                }
+            } else {
+                lbl_read_pku_status->setText("Ошибка сети");
+            }
         }
     });
 
@@ -575,13 +564,10 @@ QtViewPKU::QtViewPKU(QStackedWidget *const stacked_widget)
     });
 
     QObject::connect(btn_send_rk, &QPushButton::clicked, [rk_num_input, lbl_send_rk_status, rk_time_input, this]() {
-        bool ok_num, ok_time;
-        rk_num_input->text().toInt(&ok_num);
-        if (!ok_num) {
+        if (rk_num_input->text().isEmpty()) {
             lbl_send_rk_status->setText("Заполните номер РК");
         } else {
-            rk_time_input->text().toInt(&ok_time);
-            if (!ok_time) {
+            if (rk_time_input->text().isEmpty()) {
                 lbl_send_rk_status->setText("Заполните длительность");
             } else {
                 QString param = rk_num_input->text() + ";" + rk_time_input->text() + ";" + QString::number(operation_identifier);
