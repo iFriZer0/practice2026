@@ -8,7 +8,7 @@ actor "Пользователь" as user
 
 usecase "Получить версию драйвера" as get_version
 usecase "Проверить соединение" as check_connection
-usecase "Проверить работоспособность пульта" as get_hardware_status
+usecase "Проверить работоспособность платы" as get_hardware_status
 
 usecase "Прочитать основную информацию" as read_main_info
 usecase "Записать основную информацию" as write_main_info
@@ -16,7 +16,7 @@ usecase "Записать основную информацию" as write_main_i
 usecase "Прочитать длительности приёма ПКУ" as read_pku
 usecase "Настроить режим приёма одной ПКУ" as set_pku_mode
 
-usecase "Выдать РК" as send_rk_by_index
+usecase "Отправить команду на РК" as send_rk_by_index
 
 user -- get_version
 user -- check_connection
