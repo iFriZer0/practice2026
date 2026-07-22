@@ -1,0 +1,104 @@
+\subsection{Ошибки сети}
+
+Если соединение с микросервисом или драйвером РК/ПКУ прервано, под соответствующей кнопкой будет отображаться надпись <<Ошибка сети>>. В этом случае нужно проверить, запущены ли микросервис и драйвер и наличие неполадок в сети. После устранения проблемы клиент необходимо перезапустить.
+
+Пример ошибки сети представлен на рисунке~\ref{figure_pku_network_error}.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.2\textwidth]{pku/network_error.png}
+	\caption{Ошибка сети}
+	\label{figure_pku_network_error}
+\end{figure}
+
+\subsection{Ошибки драйвера}
+
+Если вызов команды драйвера привёл к ошибке, под соответствующей кнопкой появится надпись с сообщением об ошибке.
+
+Пример ошибки драйвера представлен на рисунке~\ref{figure_pku_driver_error}.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.2\textwidth]{pku/driver_error.png}
+	\caption{Ошибка драйвера}
+	\label{figure_pku_driver_error}
+\end{figure}
+
+\subsection{Ошибки чтения основной информации}
+
+Если драйвер отправит основную информацию размером меньше $151\ \text{Б}$, под кнопкой отобразится надпись <<Ошибка>>, а в нижнем текстовом поле отобразится надпись <<Ошибка: <<Main information is incomplete>>>>. В этом случае использующийся драйвер не подходит и его нужно заменить, после чего перезапустить микросервис РК-ПКУ и клиент.
+
+Пример ошибки чтения основной информации представлен на рисунке~\ref{figure_pku_read_main_information_error}.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.3\textwidth]{pku/read_main_information_error.png}
+	\caption{Ошибка чтения основной информации}
+	\label{figure_pku_read_main_information_error}
+\end{figure}
+
+\subsection{Ошибки записи основной информации}
+
+Если хотя бы одно из полей в панели <<Параметры основной информации>> не заполнено, под кнопкой <<Записать основную информацию>> отобразится надпись <<Все поля должны быть заполнены>>. В этом случае нужно заполнить недостающие поля.
+
+Пример ошибки записи основной информации представлен на рисунке~\ref{figure_pku_write_main_information_error}.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{pku/write_main_information_error.png}
+	\caption{Ошибка записи основной информации}
+	\label{figure_pku_write_main_information_error}
+\end{figure}
+
+\subsection{Ошибки чтения длительностей ПКУ}
+
+Если не выбрана ни одна ПКУ, под выпадающим списком <<Выбор ПКУ>> отобразится надпись <<Не выбраны ПКУ>>. В этом случае нужно выбрать хотя бы одну ПКУ.
+
+Пример ошибки чтения длительностей ПКУ представлен на рисунке~\ref{figure_pku_read_pku_error}.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{pku/read_pku_error.png}
+	\caption{Ошибка чтения длительностей ПКУ}
+	\label{figure_pku_read_pku_error}
+\end{figure}
+
+\subsection{Ошибки выдачи РК}
+
+Если поле <<Номер РК>> не заполнено, под ним отобразится надпись <<Заполните номер РК>>. В этом случае нужно заполнить это поле.
+
+Если поле <<Длительность (мс)>> не заполнено, под полем <<Номер РК>> отобразится надпись <<Заполните длительность>>. В этом случае нужно заполнить это поле.
+
+Если в поле <<Номер РК>> ввести не целое число, под полем <<Номер РК>> отобразится надпись <<Ошибка: <<Incorrect index <<$\text{<Введённый номер>}$>>>>>>. В этом случае нужно поменять номер РК на число от $1$ до $48$ включительно.
+
+Если в поле <<Длительность (мс)>> ввести не целое число, под полем <<Номер РК>> отобразится надпись <<Ошибка: <<Incorrect duration\linebreak<<$\text{<Введённая длительность>}$>>>>>>. В этом случае нужно поменять длительность на целое неотрицательное число.
+
+Примеры ошибок выдачи РК представлены на рисунках~\ref{figure_pku_send_rk_by_index_empty_index_error}~--~\ref{figure_pku_send_rk_by_index_incorrect_duration_error}.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{pku/send_rk_by_index_empty_index_error.png}
+	\caption{Пустое поле номера РК}
+	\label{figure_pku_send_rk_by_index_empty_index_error}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{pku/send_rk_by_index_incorrect_index_error.png}
+	\caption{Некорректный номер РК}
+	\label{figure_pku_send_rk_by_index_incorrect_index_error}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{pku/send_rk_by_index_empty_duration_error.png}
+	\caption{Пустое поле длительности РК}
+	\label{figure_pku_send_rk_by_index_empty_duration_error}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{pku/send_rk_by_index_incorrect_duration_error.png}
+	\caption{Некорректная длительность РК}
+	\label{figure_pku_send_rk_by_index_incorrect_duration_error}
+\end{figure}
